@@ -55,7 +55,7 @@ export default function DashboardLayout({
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <Box className="w-6 h-6 text-primary" />
-            <h1 className="text-lg font-semibold font-headline">MobiCraft</h1>
+            <h1 className="text-lg font-semibold font-headline">The Cocktail Companion</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>

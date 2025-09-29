@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'MobiCraft Studio',
+  title: 'The Cocktail Companion',
   description: 'Build your mobile app with ease.',
 };
 
