@@ -1,3 +1,32 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "template-ecommerce",
+      "name": "E-commerce App",
+      "description": "A modern e-commerce app template for online stores.",
+      "imageUrl": "https://images.unsplash.com/photo-1605902711622-cfb43c4437b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2JpbGUlMjBzaG9wcGluZ3xlbnwwfHx8fDE3NTkxMDE1ODh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mobile shopping"
+    },
+    {
+      "id": "template-social",
+      "name": "Social Connect",
+      "description": "A sleek social media app template to connect people.",
+      "imageUrl": "https://images.unsplash.com/photo-1642724978334-218b27d2c472?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtb2JpbGUlMjBzb2NpYWx8ZW58MHx8fHwxNzU5MTYyNDA2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mobile social"
+    },
+    {
+      "id": "template-booking",
+      "name": "Service Booker",
+      "description": "A clean template for booking appointments and services.",
+      "imageUrl": "https://images.unsplash.com/photo-1736001389539-94cdcffecf13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtb2JpbGUlMjBjYWxlbmRhcnxlbnwwfHx8fDE3NTkxNzE3MjN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mobile calendar"
+    },
+    {
+      "id": "template-fitness",
+      "name": "FitTrack",
+      "description": "A vibrant fitness and workout tracking app to stay healthy.",
+      "imageUrl": "https://images.unsplash.com/photo-1626252346582-c7721d805e0d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb2JpbGUlMjBmaXRuZXNzfGVufDB8fHx8MTc1OTE3MTcyM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mobile fitness"
+    }
+  ]
 }
