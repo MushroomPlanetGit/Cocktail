@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, Pencil } from 'lucide-react';
@@ -30,13 +31,17 @@ export function TemplateCard({ name, description, imageUrl, imageHint }: Templat
         <CardDescription className="mt-1 text-sm h-10">{description}</CardDescription>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button className="w-full">
-          <Pencil className="mr-2 h-4 w-4" />
-          Customize
+        <Button asChild className="w-full">
+          <Link href="/dashboard/customize">
+            <Pencil className="mr-2 h-4 w-4" />
+            Customize
+          </Link>
         </Button>
-        <Button variant="secondary" className="w-full">
-          <Eye className="mr-2 h-4 w-4" />
-          Preview
+        <Button asChild variant="secondary" className="w-full">
+          <Link href="/dashboard/preview">
+            <Eye className="mr-2 h-4 w-4" />
+            Preview
+          </Link>
         </Button>
       </CardFooter>
     </Card>
