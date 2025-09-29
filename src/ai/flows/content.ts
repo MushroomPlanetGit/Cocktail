@@ -1,14 +1,17 @@
+'use server';
+
 import { ai } from '../genkit';
 import { z } from 'zod';
-import { flow } from 'genkit/flow';
 
-export const refineContent = flow(
+const RefineContentInputSchema = z.object({
+  text: z.string(),
+  style: z.string(),
+});
+
+const refineContentFlow = ai.defineFlow(
   {
-    name: 'refineContent',
-    inputSchema: z.object({
-      text: z.string(),
-      style: z.string(),
-    }),
+    name: 'refineContentFlow',
+    inputSchema: RefineContentInputSchema,
     outputSchema: z.string(),
   },
   async ({ text, style }) => {
@@ -24,6 +27,10 @@ export const refineContent = flow(
       },
     });
 
-    return result.text();
+    return result.text;
   }
 );
+
+export async function refineContent(input: z.infer<typeof RefineContentInputSchema>): Promise<string> {
+  return refineContentFlow(input);
+}

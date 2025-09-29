@@ -1,6 +1,5 @@
 'use server';
 import { refineContent } from '@/ai/flows/content';
-import { run } from '@genkit-ai/next/server';
 import { z } from 'zod';
 
 const refineSchema = z.object({
@@ -25,7 +24,7 @@ export async function refineContentAction(prevState: any, formData: FormData) {
   }
 
   try {
-    const refinedText = await run(refineContent, validatedFields.data);
+    const refinedText = await refineContent(validatedFields.data);
     return {
       message: 'Content refined successfully.',
       refinedText,
