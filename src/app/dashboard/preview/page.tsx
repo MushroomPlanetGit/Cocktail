@@ -1,4 +1,4 @@
-import { Smartphone } from "lucide-react";
+import HomePage from "@/app/page";
 
 export default function PreviewPage() {
   return (
@@ -9,11 +9,9 @@ export default function PreviewPage() {
             <div className="h-[46px] w-[3px] bg-foreground/20 absolute -left-[17px] top-[178px] rounded-l-lg"></div>
             <div className="h-[64px] w-[3px] bg-foreground/20 absolute -right-[17px] top-[142px] rounded-r-lg"></div>
             <div className="rounded-[2rem] overflow-hidden w-full h-full bg-background">
-                <div className="text-center flex flex-col items-center justify-center h-full p-4">
-                    <Smartphone className="w-16 h-16 mb-4 text-primary"/>
-                    <h2 className="text-xl font-bold font-headline">App Preview</h2>
-                    <p className="text-muted-foreground">Your app preview will be displayed here.</p>
-                </div>
+              <div className="w-full h-full overflow-auto">
+                <HomePage />
+              </div>
             </div>
         </div>
     </div>
