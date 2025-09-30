@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Martini } from "lucide-react";
+import { PlusCircle, Martini, BookPlus } from "lucide-react";
+import Link from "next/link";
 
 const cocktails = [
   { id: 1, name: "Espresso Martini", description: "A bold and energizing coffee-flavored cocktail." },
@@ -46,7 +47,12 @@ export default function ContentPage() {
                       <p className="text-sm text-muted-foreground">{cocktail.description}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm">Edit</Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/dashboard/recipe-book">
+                      <BookPlus className="mr-2 h-4 w-4" />
+                      Add to My Recipe Book
+                    </Link>
+                  </Button>
                 </div>
               ))}
             </div>
