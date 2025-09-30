@@ -26,6 +26,7 @@ import {
   User,
   BookUser,
   Home,
+  FlaskConical,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ const navItems = [
   { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
   { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
+  { href: '/dashboard/mixology-lab', label: 'Mixology Lab', icon: FlaskConical },
   { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
 
