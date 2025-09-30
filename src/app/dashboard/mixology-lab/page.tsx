@@ -172,6 +172,7 @@ export default function MixologyLabPage() {
                 <SelectItem value="tequila">Tequila</SelectItem>
                 <SelectItem value="whiskey">Whiskey</SelectItem>
                 <SelectItem value="history">Cocktail History</SelectItem>
+                <SelectItem value="glassware">Proper Glassware</SelectItem>
               </SelectContent>
             </Select>
           </div>

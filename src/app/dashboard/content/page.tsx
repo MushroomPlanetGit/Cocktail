@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Martini, BookPlus, RecipeBook, History, GlassWater, Sparkles, ShoppingCart, ListSteps } from "lucide-react";
+import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -51,7 +51,7 @@ export default function ContentPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <RecipeBook className="w-8 h-8" />
+            <BookOpenCheck className="w-8 h-8" />
             Cocktail Recipe Book
           </h1>
           <p className="text-muted-foreground">
@@ -94,7 +94,7 @@ export default function ContentPage() {
                           </ul>
                       </div>
                       <div className="grid gap-2">
-                          <h4 className="font-semibold flex items-center"><ListSteps className="mr-2 h-4 w-4 text-primary"/>Directions</h4>
+                          <h4 className="font-semibold flex items-center"><ListOrdered className="mr-2 h-4 w-4 text-primary"/>Directions</h4>
                           <p className="text-muted-foreground">{cocktail.directions}</p>
                       </div>
                        <div className="grid md:grid-cols-2 gap-6">
