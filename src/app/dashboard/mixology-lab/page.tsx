@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb } from 'lucide-react';
+import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const sampleQuestion = {
@@ -144,7 +145,7 @@ export default function MixologyLabPage() {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="max-w-4xl mx-auto">
       <CardHeader>
         <div className="flex items-center gap-4">
           <div className="bg-primary/10 p-3 rounded-md">
@@ -152,50 +153,98 @@ export default function MixologyLabPage() {
           </div>
           <div>
             <CardTitle>The Mixology Lab</CardTitle>
-            <CardDescription>Test your cocktail knowledge with our quizzes.</CardDescription>
+            <CardDescription>Test your cocktail knowledge with quizzes and puzzles.</CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="spirit-select">Choose a Category</Label>
-            <Select value={spirit} onValueChange={setSpirit}>
-              <SelectTrigger id="spirit-select">
-                <SelectValue placeholder="Select a base spirit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="random">Random</SelectItem>
-                <SelectItem value="vodka">Vodka</SelectItem>
-                <SelectItem value="gin">Gin</SelectItem>
-                <SelectItem value="rum">Rum</SelectItem>
-                <SelectItem value="tequila">Tequila</SelectItem>
-                <SelectItem value="whiskey">Whiskey</SelectItem>
-                <SelectItem value="history">Cocktail History</SelectItem>
-                <SelectItem value="glassware">Proper Glassware</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="difficulty-select">Choose a Difficulty</Label>
-            <Select value={difficulty} onValueChange={setDifficulty}>
-              <SelectTrigger id="difficulty-select">
-                <SelectValue placeholder="Select difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="easy">Easy</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="hard">Hard</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={startQuiz}>
-            Start Quiz
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+      <CardContent>
+        <Tabs defaultValue="quizzes">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="quizzes">
+              <Lightbulb className="mr-2 h-4 w-4" />
+              Quizzes
+            </TabsTrigger>
+            <TabsTrigger value="crosswords">
+              <Puzzle className="mr-2 h-4 w-4" />
+              Crossword Puzzles
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="quizzes" className="pt-6">
+             <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="spirit-select">Choose a Category</Label>
+                <Select value={spirit} onValueChange={setSpirit}>
+                  <SelectTrigger id="spirit-select">
+                    <SelectValue placeholder="Select a base spirit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="random">Random</SelectItem>
+                    <SelectItem value="vodka">Vodka</SelectItem>
+                    <SelectItem value="gin">Gin</SelectItem>
+                    <SelectItem value="rum">Rum</SelectItem>
+                    <SelectItem value="tequila">Tequila</SelectItem>
+                    <SelectItem value="whiskey">Whiskey</SelectItem>
+                    <SelectItem value="history">Cocktail History</SelectItem>
+                    <SelectItem value="glassware">Proper Glassware</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="difficulty-select">Choose a Difficulty</Label>
+                <Select value={difficulty} onValueChange={setDifficulty}>
+                  <SelectTrigger id="difficulty-select">
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button onClick={startQuiz}>
+                Start Quiz
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="crosswords" className="pt-6">
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-4">Cocktail Crossword #1</h3>
+                <div className="grid grid-cols-10 grid-rows-10 gap-px bg-foreground max-w-sm aspect-square border">
+                  {/* Placeholder for crossword grid cells */}
+                  {Array.from({ length: 100 }).map((_, i) => (
+                    <div key={i} className="bg-background flex items-center justify-center">
+                      <span className="text-xs"></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="w-full lg:w-80">
+                <div className="mb-6">
+                  <h4 className="font-semibold text-primary mb-2">Across</h4>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>1. A classic Cuban highball</li>
+                    <li>5. Spirit made from agave</li>
+                    <li>7. Zesty citrus fruit in a Margarita</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-primary mb-2">Down</h4>
+                   <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>2. Bitter Italian liqueur in a Negroni</li>
+                    <li>3. The "wake me up" ingredient in an Espresso Martini</li>
+                    <li>4. A popular whiskey-based cocktail</li>
+                  </ul>
+                </div>
+                <Button className="w-full mt-6">Check Puzzle</Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
