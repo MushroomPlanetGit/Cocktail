@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle } from 'lucide-react';
+import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle, Layers, Check, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +27,12 @@ const sampleQuestion = {
   explanation: 'A Negroni is an iconic Italian cocktail, made of one part gin, one part sweet vermouth, and one part Campari, garnished with orange peel. It is considered an apéritif.'
 };
 
+const flashcard = {
+  id: 'fc1',
+  term: 'Old Fashioned',
+  definition: '2 oz Bourbon or Rye Whiskey, 1 Sugar Cube, 2 dashes Angostura Bitters, Orange Peel for garnish.'
+};
+
 // Helper function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
   return [...array].sort(() => Math.random() - 0.5);
@@ -40,6 +46,7 @@ export default function MixologyLabPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   // Memoize the shuffled answers so they don't re-shuffle on every render
   const shuffledAnswers = useMemo(() => shuffleArray(sampleQuestion.answers), [quizStarted]);
@@ -161,7 +168,7 @@ export default function MixologyLabPage() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="quizzes">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="quizzes">
               <Lightbulb className="mr-2 h-4 w-4" />
               Quizzes
@@ -173,6 +180,10 @@ export default function MixologyLabPage() {
              <TabsTrigger value="what-am-i">
               <HelpCircle className="mr-2 h-4 w-4" />
               What Am I?
+            </TabsTrigger>
+            <TabsTrigger value="flashcards">
+              <Layers className="mr-2 h-4 w-4" />
+              Flashcards
             </TabsTrigger>
           </TabsList>
           <TabsContent value="quizzes" className="pt-6">
@@ -267,6 +278,37 @@ export default function MixologyLabPage() {
                   <Button>Submit Guess</Button>
                 </div>
              </div>
+          </TabsContent>
+           <TabsContent value="flashcards" className="pt-6">
+            <div className="max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-center mb-4">Flashcards</h3>
+                <Card className="aspect-video flex items-center justify-center p-6 text-center relative cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+                  <div className={cn("transition-transform duration-500", {"[transform:rotateY(180deg)]": isFlipped})}>
+                    {!isFlipped ? (
+                      <CardTitle>{flashcard.term}</CardTitle>
+                    ) : (
+                      <p className="text-muted-foreground [transform:rotateY(180deg)]">{flashcard.definition}</p>
+                    )}
+                  </div>
+                </Card>
+                <div className="mt-4 flex justify-center">
+                  <Button variant="ghost" onClick={() => setIsFlipped(!isFlipped)}>
+                    <Repeat className="mr-2 h-4 w-4" />
+                    Flip Card
+                  </Button>
+                </div>
+                 <Separator className="my-6" />
+                 <div className="flex justify-between">
+                    <Button variant="outline">
+                        Mark as Learned
+                        <Check className="ml-2 h-4 w-4" />
+                    </Button>
+                    <Button>
+                        Next Card
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
