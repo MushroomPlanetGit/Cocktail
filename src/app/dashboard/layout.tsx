@@ -104,7 +104,9 @@ export default function DashboardLayout({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/profile">Profile</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Logout</DropdownMenuItem>
