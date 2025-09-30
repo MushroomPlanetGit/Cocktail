@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -5,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle } from 'lucide-react';
+import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 
 
 const sampleQuestion = {
@@ -159,7 +161,7 @@ export default function MixologyLabPage() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="quizzes">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="quizzes">
               <Lightbulb className="mr-2 h-4 w-4" />
               Quizzes
@@ -167,6 +169,10 @@ export default function MixologyLabPage() {
             <TabsTrigger value="crosswords">
               <Puzzle className="mr-2 h-4 w-4" />
               Crossword Puzzles
+            </TabsTrigger>
+             <TabsTrigger value="what-am-i">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              What Am I?
             </TabsTrigger>
           </TabsList>
           <TabsContent value="quizzes" className="pt-6">
@@ -243,6 +249,24 @@ export default function MixologyLabPage() {
                 <Button className="w-full mt-6">Check Puzzle</Button>
               </div>
             </div>
+          </TabsContent>
+          <TabsContent value="what-am-i" className="pt-6">
+             <div className="max-w-md mx-auto">
+                <h3 className="text-lg font-semibold text-center mb-4">I am a cocktail...</h3>
+                <Card>
+                  <CardContent className="p-6">
+                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                      <li>My main ingredients are rum, mint, and lime.</li>
+                      <li>I am a classic Cuban highball.</li>
+                      <li>I was a favorite of author Ernest Hemingway.</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                <div className="mt-6 flex gap-2">
+                  <Input placeholder="Type your guess here..." />
+                  <Button>Submit Guess</Button>
+                </div>
+             </div>
           </TabsContent>
         </Tabs>
       </CardContent>
