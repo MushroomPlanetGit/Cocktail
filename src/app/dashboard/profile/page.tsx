@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, User as UserIcon, Users, Globe, Lock, EyeOff, Image as ImageIcon } from 'lucide-react';
+import { Upload, User as UserIcon, Users, Globe, Lock, EyeOff, Image as ImageIcon, Target, CheckCircle, HelpCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Progress } from '@/components/ui/progress';
 
 
 export default function ProfilePage() {
@@ -52,6 +53,39 @@ export default function ProfilePage() {
         </CardContent>
         <CardFooter>
           <Button>Save Profile</Button>
+        </CardFooter>
+      </Card>
+      
+       <Card>
+        <CardHeader>
+          <CardTitle>Quiz Performance</CardTitle>
+          <CardDescription>Track your mixology knowledge progress.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+            <div className="p-4 rounded-lg bg-muted/50">
+              <Target className="h-8 w-8 text-primary mx-auto" />
+              <p className="text-2xl font-bold mt-2">82%</p>
+              <p className="text-sm text-muted-foreground">Overall Accuracy</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
+              <p className="text-2xl font-bold mt-2">125</p>
+              <p className="text-sm text-muted-foreground">Correct Answers</p>
+            </div>
+             <div className="p-4 rounded-lg bg-muted/50">
+              <HelpCircle className="h-8 w-8 text-yellow-500 mx-auto" />
+              <p className="text-2xl font-bold mt-2">152</p>
+              <p className="text-sm text-muted-foreground">Total Questions</p>
+            </div>
+          </div>
+          <div>
+            <Label>Weakest Category: <span className="font-normal text-muted-foreground">Cocktail History</span></Label>
+            <Progress value={45} className="mt-2" />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline">Review Missed Questions</Button>
         </CardFooter>
       </Card>
       

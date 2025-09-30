@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, ChevronRight, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 
 const sampleQuestion = {
@@ -20,6 +21,7 @@ const sampleQuestion = {
   ],
   category: 'gin',
   difficulty: 'medium',
+  explanation: 'A Negroni is an iconic Italian cocktail, made of one part gin, one part sweet vermouth, and one part Campari, garnished with orange peel. It is considered an apéritif.'
 };
 
 // Helper function to shuffle an array
@@ -112,6 +114,19 @@ export default function MixologyLabPage() {
               );
             })}
           </div>
+            {showFeedback && (
+            <>
+              <Separator />
+              <div className="p-4 rounded-md bg-muted/50">
+                <h4 className="font-semibold flex items-center mb-2">
+                  <Lightbulb className="mr-2 h-5 w-5 text-primary" />
+                  Did you know?
+                </h4>
+                <p className="text-sm text-muted-foreground">{sampleQuestion.explanation}</p>
+              </div>
+            </>
+          )}
+
         </CardContent>
         <CardFooter className="flex justify-end">
             {showFeedback ? (
