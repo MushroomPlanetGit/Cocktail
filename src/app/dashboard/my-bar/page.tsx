@@ -4,34 +4,50 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Trash2, Search, X } from 'lucide-react';
+import { PlusCircle, Trash2, Search, Camera, Bot } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const initialIngredients = [
-  'Vodka',
-  'Gin',
-  'Triple Sec',
-  'Lime Juice',
-  'Simple Syrup',
-  'Tonic Water',
-  'Espresso',
-  'Coffee Liqueur'
+interface Ingredient {
+  id: number;
+  name: string;
+  level: number;
+  size: string;
+}
+
+const initialIngredients: Ingredient[] = [
+  { id: 1, name: 'Vodka', level: 80, size: '750ml' },
+  { id: 2, name: 'Gin', level: 50, size: '1L' },
+  { id: 3, name: 'Triple Sec', level: 100, size: '750ml' },
+  { id: 4, name: 'Lime Juice', level: 25, size: 'N/A' },
+  { id: 5, name: 'Coffee Liqueur', level: 90, size: '750ml' },
 ];
 
 export default function MyBarPage() {
-  const [ingredients, setIngredients] = useState<string[]>(initialIngredients);
-  const [newIngredient, setNewIngredient] = useState('');
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [newIngredientSize, setNewIngredientSize] = useState('750ml');
 
   const addIngredient = () => {
-    if (newIngredient.trim() !== '' && !ingredients.includes(newIngredient.trim())) {
-      setIngredients([...ingredients, newIngredient.trim()]);
-      setNewIngredient('');
+    if (newIngredientName.trim() !== '') {
+      const newIngredient: Ingredient = {
+        id: Date.now(),
+        name: newIngredientName.trim(),
+        level: 100,
+        size: newIngredientSize,
+      };
+      setIngredients([...ingredients, newIngredient]);
+      setNewIngredientName('');
     }
   };
 
-  const removeIngredient = (ingredientToRemove: string) => {
-    setIngredients(ingredients.filter(ingredient => ingredient !== ingredientToRemove));
+  const removeIngredient = (id: number) => {
+    setIngredients(ingredients.filter(ingredient => ingredient.id !== id));
   };
+  
+  const updateIngredientLevel = (id: number, level: number[]) => {
+     setIngredients(ingredients.map(ing => ing.id === id ? { ...ing, level: level[0] } : ing));
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -42,43 +58,91 @@ export default function MyBarPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
-            <div className="grid gap-2">
-              <label htmlFor="add-ingredient" className="text-sm font-medium">Add Ingredient</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="add-ingredient"
-                  placeholder="e.g., Angostura Bitters"
-                  value={newIngredient}
-                  onChange={(e) => setNewIngredient(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addIngredient()}
-                />
-                <Button onClick={addIngredient}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add
-                </Button>
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Add a New Bottle</CardTitle>
+              </CardHeader>
+              <CardContent className="grid sm:grid-cols-2 gap-4">
+                 <div className="flex flex-col gap-2">
+                    <label htmlFor="add-ingredient" className="text-sm font-medium">Ingredient Name</label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="add-ingredient"
+                        placeholder="e.g., Angostura Bitters"
+                        value={newIngredientName}
+                        onChange={(e) => setNewIngredientName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addIngredient()}
+                      />
+                       <Button variant="outline" size="icon" className="shrink-0">
+                          <Bot className="h-5 w-5"/>
+                          <span className="sr-only">Identify with AI</span>
+                      </Button>
+                      <Button variant="outline" size="icon" className="shrink-0">
+                          <Camera className="h-5 w-5"/>
+                          <span className="sr-only">Scan with Camera</span>
+                      </Button>
+                    </div>
+                 </div>
+                 <div className="flex flex-col gap-2">
+                    <label htmlFor="bottle-size" className="text-sm font-medium">Bottle Size</label>
+                    <div className="flex items-end gap-2">
+                      <Select value={newIngredientSize} onValueChange={setNewIngredientSize}>
+                        <SelectTrigger id="bottle-size">
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="750ml">750ml</SelectItem>
+                          <SelectItem value="1L">1L</SelectItem>
+                          <SelectItem value="1.75L">1.75L</SelectItem>
+                           <SelectItem value="N/A">N/A</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addIngredient} className="shrink-0">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="grid gap-4">
-              <h3 className="text-base font-medium">Your Ingredients</h3>
+              <h3 className="text-xl font-semibold">Your Inventory</h3>
               {ingredients.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {ingredients.map((ingredient) => (
-                    <Badge key={ingredient} variant="secondary" className="text-sm pl-3 pr-1 py-1">
-                      {ingredient}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 ml-1"
-                        onClick={() => removeIngredient(ingredient)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
+                    <Card key={ingredient.id}>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-base font-medium">{ingredient.name}</CardTitle>
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 -mt-2 -mr-2"
+                                onClick={() => removeIngredient(ingredient.id)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xs text-muted-foreground mb-4">Size: {ingredient.size}</div>
+                            <div className="grid gap-2">
+                                <Slider
+                                    defaultValue={[ingredient.level]}
+                                    max={100}
+                                    step={1}
+                                    onValueChange={(value) => updateIngredientLevel(ingredient.id, value)}
+                                />
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Empty</span>
+                                    <span>Full</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground">You haven't added any ingredients yet.</div>
+                <div className="text-sm text-muted-foreground py-12 text-center border-2 border-dashed rounded-lg">You haven't added any ingredients yet.</div>
               )}
             </div>
           </div>
