@@ -1,6 +1,10 @@
+
+'use client';
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered } from "lucide-react";
+import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered, Search } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -8,6 +12,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+
 
 const cocktails = [
   { 
@@ -46,6 +53,9 @@ const cocktails = [
 ];
 
 export default function ContentPage() {
+    const [spirit, setSpirit] = useState('all');
+    const [style, setStyle] = useState('all');
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -67,7 +77,50 @@ export default function ContentPage() {
       <Card>
         <CardHeader>
           <CardTitle>Cocktail Index</CardTitle>
-          <CardDescription>Browse the recipes below and add your favorites to your personal recipe book.</CardDescription>
+          <CardDescription>Browse recipes, or filter by spirit and style to find your next favorite drink.</CardDescription>
+           <Separator className="my-4" />
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                    <label className="text-sm font-medium">Filter by Base Spirit</label>
+                    <Select value={spirit} onValueChange={setSpirit}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a base spirit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Spirits</SelectItem>
+                            <SelectItem value="vodka">Vodka</SelectItem>
+                            <SelectItem value="gin">Gin</SelectItem>
+                            <SelectItem value="rum">Rum</SelectItem>
+                            <SelectItem value="tequila">Tequila</SelectItem>
+                            <SelectItem value="whiskey">Whiskey</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid gap-2">
+                    <label className="text-sm font-medium">Filter by Style</label>
+                     <Select value={style} onValueChange={setStyle}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Styles</SelectItem>
+                            <SelectItem value="classic">Classic</SelectItem>
+                            <SelectItem value="modern">Modern</SelectItem>
+                            <SelectItem value="tropical">Tropical</SelectItem>
+                            <SelectItem value="sour">Sour</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="grid gap-2 sm:col-span-2 md:col-span-1">
+                     <label className="text-sm font-medium">Have ingredients on hand?</label>
+                    <Button asChild>
+                        <Link href="/dashboard/my-bar">
+                            <Search className="mr-2 h-4 w-4" />
+                            What can I make?
+                        </Link>
+                    </Button>
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
           {cocktails.length > 0 ? (
@@ -138,3 +191,5 @@ export default function ContentPage() {
     </div>
   );
 }
+
+    
