@@ -24,6 +24,7 @@ import {
   Smartphone,
   Rocket,
   User,
+  BookUser,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ const navItems = [
   { href: '/dashboard/customize', label: 'Customize', icon: Palette },
   { href: '/dashboard/content', label: 'Content', icon: FileText },
   { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
+  { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
 
