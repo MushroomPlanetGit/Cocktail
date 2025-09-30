@@ -13,6 +13,10 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +32,7 @@ import {
   Home,
   FlaskConical,
   BookOpenCheck,
+  Lightbulb,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -45,7 +50,6 @@ const navItems = [
   { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
   { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
-  { href: '/dashboard/mixology-lab', label: 'Mixology Lab', icon: FlaskConical },
   { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
 
@@ -81,6 +85,22 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+             <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center">
+                  <FlaskConical />
+                  <span>Mixology Lab</span>
+                </SidebarGroupLabel>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/dashboard/mixology-lab'}>
+                      <Link href="/dashboard/mixology-lab">
+                        <Lightbulb />
+                        <span>Quizzes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroup>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
