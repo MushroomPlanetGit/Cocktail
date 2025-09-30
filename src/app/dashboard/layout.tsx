@@ -27,6 +27,7 @@ import {
   BookUser,
   Home,
   FlaskConical,
+  BookOpenCheck,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,7 +41,7 @@ import {
 const navItems = [
   { href: '/dashboard', label: 'Templates', icon: LayoutGrid },
   { href: '/dashboard/customize', label: 'Customize', icon: Palette },
-  { href: '/dashboard/content', label: 'Content', icon: FileText },
+  { href: '/dashboard/content', label: 'Master Recipes', icon: BookOpenCheck },
   { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
   { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },

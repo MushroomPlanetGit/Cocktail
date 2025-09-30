@@ -52,10 +52,10 @@ export default function ContentPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <BookOpenCheck className="w-8 h-8" />
-            Cocktail Recipe Book
+            Master Recipes
           </h1>
           <p className="text-muted-foreground">
-            Manage the delicious cocktails featured in your app.
+            An official list of classic and modern cocktails.
           </p>
         </div>
         <Button>
@@ -66,8 +66,8 @@ export default function ContentPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Master Recipes</CardTitle>
-          <CardDescription>An official list of classic and modern cocktails.</CardDescription>
+          <CardTitle>Cocktail Index</CardTitle>
+          <CardDescription>Browse the recipes below and add your favorites to your personal recipe book.</CardDescription>
         </CardHeader>
         <CardContent>
           {cocktails.length > 0 ? (
