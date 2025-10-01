@@ -1,18 +1,26 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2, Search, Camera, Bot } from 'lucide-react';
+import { PlusCircle, Trash2, Search, Camera, Bot, Martini } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 
 interface Ingredient {
   id: number;
   name: string;
   level: number;
   size: string;
+}
+
+interface Suggestion {
+    name: string;
+    match: number;
+    link: string;
 }
 
 const initialIngredients: Ingredient[] = [
@@ -23,10 +31,20 @@ const initialIngredients: Ingredient[] = [
   { id: 5, name: 'Coffee Liqueur', level: 90, size: '750ml' },
 ];
 
+// This is a placeholder for a real recipe data source
+const allRecipes = [
+    { name: "Espresso Martini", ingredients: ["Vodka", "Coffee Liqueur", "Espresso"], link: "/dashboard/content" },
+    { name: "Classic Margarita", ingredients: ["Tequila", "Lime Juice", "Triple Sec"], link: "/dashboard/content" },
+    { name: "Mojito", ingredients: ["White Rum", "Lime Juice", "Sugar", "Mint"], link: "/dashboard/content" },
+    { name: "Gimlet", ingredients: ["Gin", "Lime Juice", "Simple Syrup"], link: "/dashboard/content" },
+];
+
+
 export default function MyBarPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newIngredientSize, setNewIngredientSize] = useState('750ml');
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
   const addIngredient = () => {
     if (newIngredientName.trim() !== '') {
@@ -48,6 +66,25 @@ export default function MyBarPage() {
   const updateIngredientLevel = (id: number, level: number[]) => {
      setIngredients(ingredients.map(ing => ing.id === id ? { ...ing, level: level[0] } : ing));
   }
+
+  const findWhatICanMake = () => {
+    const ownedIngredients = new Set(ingredients.map(i => i.name));
+    const results: Suggestion[] = [];
+
+    allRecipes.forEach(recipe => {
+        const owned = recipe.ingredients.filter(ing => ownedIngredients.has(ing));
+        if(owned.length > 0) {
+            results.push({
+                name: recipe.name,
+                match: Math.round((owned.length / recipe.ingredients.length) * 100),
+                link: recipe.link
+            });
+        }
+    });
+
+    setSuggestions(results.sort((a,b) => b.match - a.match));
+  }
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -148,11 +185,38 @@ export default function MyBarPage() {
           </div>
         </CardContent>
       </Card>
-      <div className="flex justify-start">
-        <Button size="lg">
+      <div className="flex flex-col gap-6">
+        <Button size="lg" onClick={findWhatICanMake} className="self-start">
           <Search className="mr-2 h-5 w-5" />
           What can I make with what I have?
         </Button>
+
+        {suggestions.length > 0 && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Cocktail Suggestions</CardTitle>
+                    <CardDescription>Based on your inventory, here are a few things you can make.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                    {suggestions.map(suggestion => (
+                        <Link href={suggestion.link} key={suggestion.name}>
+                            <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <Martini className="h-6 w-6 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-semibold">{suggestion.name}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            You have {suggestion.match}% of the ingredients.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-sm font-semibold">{suggestion.match}%</div>
+                            </div>
+                        </Link>
+                    ))}
+                </CardContent>
+            </Card>
+        )}
       </div>
     </div>
   );
