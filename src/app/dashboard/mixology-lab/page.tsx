@@ -51,6 +51,8 @@ export default function MixologyLabPage() {
 
 
   const startQuiz = () => {
+    setQuizStarted(true);
+    setQuestion(null);
     startTransition(async () => {
       const result = await generateQuizQuestionAction({ category, difficulty });
       if (result.error) {
@@ -65,7 +67,6 @@ export default function MixologyLabPage() {
         setSelectedAnswer(null);
         setIsCorrect(null);
         setShowFeedback(false);
-        setQuizStarted(true);
       }
     });
   };
@@ -93,9 +94,9 @@ export default function MixologyLabPage() {
   }
 
   if (quizStarted) {
-    if (!question) {
+    if (isPending || !question) {
       return (
-        <Card className="max-w-2xl mx-auto flex flex-col items-center justify-center p-8">
+        <Card className="max-w-2xl mx-auto flex flex-col items-center justify-center p-8 min-h-[400px]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <CardTitle className="mt-4">Generating Question</CardTitle>
             <CardDescription>Our AI is crafting the perfect challenge for you...</CardDescription>

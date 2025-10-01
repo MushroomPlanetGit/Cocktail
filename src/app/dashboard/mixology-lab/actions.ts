@@ -4,7 +4,7 @@
 import {
   generateQuizQuestion,
   GenerateQuizQuestionInputSchema,
-  GenerateQuizQuestionOutputSchema,
+  GenerateQuizQuestionOutput,
 } from '@/ai/flows/generate-quiz-question';
 import { z } from 'zod';
 
