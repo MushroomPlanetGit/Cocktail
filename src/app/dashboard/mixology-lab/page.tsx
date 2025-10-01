@@ -1,31 +1,20 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle, Layers, Check, Repeat } from 'lucide-react';
+import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle, Layers, Check, Repeat, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { generateQuizQuestionAction } from './actions';
+import type { GenerateQuizQuestionOutput } from '@/ai/flows/generate-quiz-question';
+import { useToast } from '@/hooks/use-toast';
 
-
-const sampleQuestion = {
-  id: 'q1',
-  question: 'Which of the following are the traditional ingredients in a Negroni?',
-  answers: [
-    { text: 'Gin, Sweet Vermouth, Campari', correct: true },
-    { text: 'Vodka, Triple Sec, Lime Juice, Cranberry Juice', correct: false },
-    { text: 'Rum, Lime Juice, Sugar', correct: false },
-    { text: 'Whiskey, Sweet Vermouth, Angostura Bitters', correct: false },
-  ],
-  category: 'gin',
-  difficulty: 'medium',
-  explanation: 'A Negroni is an iconic Italian cocktail, made of one part gin, one part sweet vermouth, and one part Campari, garnished with orange peel. It is considered an apéritif.'
-};
 
 const flashcard = {
   id: 'fc1',
@@ -40,24 +29,45 @@ function shuffleArray<T>(array: T[]): T[] {
 
 
 export default function MixologyLabPage() {
-  const [spirit, setSpirit] = useState('random');
+  const [category, setCategory] = useState('random');
   const [difficulty, setDifficulty] = useState('medium');
   const [quizStarted, setQuizStarted] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [question, setQuestion] = useState<GenerateQuizQuestionOutput | null>(null);
+  const { toast } = useToast();
+
 
   // Memoize the shuffled answers so they don't re-shuffle on every render
-  const shuffledAnswers = useMemo(() => shuffleArray(sampleQuestion.answers), [quizStarted]);
+  const shuffledAnswers = useMemo(() => {
+    if (question) {
+      return shuffleArray(question.answers);
+    }
+    return [];
+  }, [question]);
 
 
   const startQuiz = () => {
-    // Reset state for a new quiz
-    setSelectedAnswer(null);
-    setIsCorrect(null);
-    setShowFeedback(false);
-    setQuizStarted(true);
+    startTransition(async () => {
+      const result = await generateQuizQuestionAction({ category, difficulty });
+      if (result.error) {
+        toast({
+          title: 'Error Generating Question',
+          description: result.error,
+          variant: 'destructive',
+        });
+        setQuizStarted(false);
+      } else {
+        setQuestion(result.question);
+        setSelectedAnswer(null);
+        setIsCorrect(null);
+        setShowFeedback(false);
+        setQuizStarted(true);
+      }
+    });
   };
 
   const handleAnswerSelect = (answerText: string) => {
@@ -72,17 +82,26 @@ export default function MixologyLabPage() {
       setShowFeedback(true);
       if(!isCorrect) {
           // Here is where we would add logic to track the incorrectly answered question
-          console.log(`Question "${sampleQuestion.question}" answered incorrectly. Add to review queue.`);
+          console.log(`Question "${question?.question}" answered incorrectly. Add to review queue.`);
       }
     }
   }
 
   const nextQuestion = () => {
-    // For now, this just restarts the quiz. Later it would fetch the next question.
+    // For now, this just gets another question with the same settings
     startQuiz();
   }
 
   if (quizStarted) {
+    if (!question) {
+      return (
+        <Card className="max-w-2xl mx-auto flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <CardTitle className="mt-4">Generating Question</CardTitle>
+            <CardDescription>Our AI is crafting the perfect challenge for you...</CardDescription>
+        </Card>
+      )
+    }
     return (
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
@@ -90,7 +109,7 @@ export default function MixologyLabPage() {
           <CardDescription>Question 1 of 10</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
-          <p className="text-lg font-semibold">{sampleQuestion.question}</p>
+          <p className="text-lg font-semibold">{question.question}</p>
           <div className="grid gap-3">
             {shuffledAnswers.map((answer) => {
               const isSelected = selectedAnswer === answer.text;
@@ -132,7 +151,7 @@ export default function MixologyLabPage() {
                   <Lightbulb className="mr-2 h-5 w-5 text-primary" />
                   Did you know?
                 </h4>
-                <p className="text-sm text-muted-foreground">{sampleQuestion.explanation}</p>
+                <p className="text-sm text-muted-foreground">{question.explanation}</p>
               </div>
             </>
           )}
@@ -140,8 +159,9 @@ export default function MixologyLabPage() {
         </CardContent>
         <CardFooter className="flex justify-end">
             {showFeedback ? (
-                 <Button onClick={nextQuestion}>
-                    Next Question <ChevronRight className="ml-2 h-4 w-4" />
+                 <Button onClick={nextQuestion} disabled={isPending}>
+                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Next Question"}
+                    {!isPending && <ChevronRight className="ml-2 h-4 w-4" />}
                 </Button>
             ) : (
                 <Button onClick={checkAnswer} disabled={!selectedAnswer}>
@@ -189,9 +209,9 @@ export default function MixologyLabPage() {
           <TabsContent value="quizzes" className="pt-6">
              <div className="grid md:grid-cols-2 gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="spirit-select">Choose a Category</Label>
-                <Select value={spirit} onValueChange={setSpirit}>
-                  <SelectTrigger id="spirit-select">
+                <Label htmlFor="category-select">Choose a Category</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger id="category-select">
                     <SelectValue placeholder="Select a base spirit" />
                   </SelectTrigger>
                   <SelectContent>
@@ -221,9 +241,9 @@ export default function MixologyLabPage() {
               </div>
             </div>
             <div className="flex justify-end mt-6">
-              <Button onClick={startQuiz}>
-                Start Quiz
-                <ChevronRight className="ml-2 h-4 w-4" />
+              <Button onClick={startQuiz} disabled={isPending}>
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Start Quiz"}
+                {!isPending && <ChevronRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </TabsContent>
