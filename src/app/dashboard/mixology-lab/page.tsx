@@ -26,7 +26,7 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export default function MixologyLabPage() {
   const [category, setCategory] = useState('random');
-  const [difficulty, setDifficulty] = useState('medium');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [quizStarted, setQuizStarted] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -51,11 +51,13 @@ export default function MixologyLabPage() {
   const [crossword, setCrossword] = useState<GenerateCrosswordOutput | null>(null);
   const [crosswordGrid, setCrosswordGrid] = useState<string[][]>([]);
   const [isCrosswordLoading, setIsCrosswordLoading] = useState(true);
+  const [crosswordCategory, setCrosswordCategory] = useState('random');
+  const [crosswordDifficulty, setCrosswordDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
 
   const fetchCrossword = () => {
     setIsCrosswordLoading(true);
     startTransition(() => {
-        generateCrosswordAction().then(result => {
+        generateCrosswordAction({ category: crosswordCategory, difficulty: crosswordDifficulty }).then(result => {
             if (result.error || !result.crossword) {
                 toast({
                     title: 'Error Generating Crossword',
@@ -333,7 +335,7 @@ export default function MixologyLabPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="difficulty-select">Choose a Difficulty</Label>
-                <Select value={difficulty} onValueChange={setDifficulty}>
+                <Select value={difficulty} onValueChange={(value) => setDifficulty(value as 'easy' | 'medium' | 'hard')}>
                   <SelectTrigger id="difficulty-select">
                     <SelectValue placeholder="Select difficulty" />
                   </SelectTrigger>
@@ -360,60 +362,94 @@ export default function MixologyLabPage() {
                     <CardDescription>Our AI is building a new puzzle for you...</CardDescription>
                 </div>
             ) : crossword && (
-                <div className="flex flex-col lg:flex-row gap-8">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">AI-Generated Crossword</h3>
-                        <Button variant="outline" size="sm" onClick={fetchCrossword} disabled={isCrosswordLoading || isPending}>
-                            <Repeat className="mr-2 h-4 w-4" />
-                            New Puzzle
-                        </Button>
+                <div className="flex flex-col gap-8">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid gap-2">
+                      <Label htmlFor="crossword-category-select">Choose a Category</Label>
+                      <Select value={crosswordCategory} onValueChange={setCrosswordCategory}>
+                        <SelectTrigger id="crossword-category-select">
+                          <SelectValue placeholder="Select a base spirit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="random">Random</SelectItem>
+                          <SelectItem value="vodka">Vodka</SelectItem>
+                          <SelectItem value="gin">Gin</SelectItem>
+                          <SelectItem value="rum">Rum</SelectItem>
+                          <SelectItem value="tequila">Tequila</SelectItem>
+                          <SelectItem value="whiskey">Whiskey</SelectItem>
+                          <SelectItem value="history">Cocktail History</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div 
-                        className="grid gap-px bg-foreground max-w-md aspect-square border"
-                        style={{ gridTemplateColumns: `repeat(${crossword.cols}, minmax(0, 1fr))` }}
-                    >
-                      {crossword.layout.map((row, rowIndex) => (
-                        row.map((cell, colIndex) => {
-                          if (cell === 'X') {
-                            return <div key={`${rowIndex}-${colIndex}`} className="bg-foreground" />;
-                          }
-                          
-                          const allClues: CrosswordClues[] = [...crossword.clues.across, ...crossword.clues.down];
-                          const clueNumber = allClues.find(c => c.row === rowIndex && c.col === colIndex)?.num;
-
-                          return (
-                            <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
-                              {clueNumber && <span className="absolute top-0 left-0.5 text-[10px] text-muted-foreground">{clueNumber}</span>}
-                               <Input
-                                type="text"
-                                maxLength={1}
-                                data-row={rowIndex}
-                                data-col={colIndex}
-                                value={crosswordGrid[rowIndex]?.[colIndex] || ''}
-                                onChange={(e) => handleCrosswordInputChange(rowIndex, colIndex, e.target.value)}
-                                className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase"
-                              />
-                            </div>
-                          );
-                        })
-                      )).flat()}
+                    <div className="grid gap-2">
+                      <Label htmlFor="crossword-difficulty-select">Choose a Difficulty</Label>
+                      <Select value={crosswordDifficulty} onValueChange={(value) => setCrosswordDifficulty(value as 'easy' | 'medium' | 'hard')}>
+                        <SelectTrigger id="crossword-difficulty-select">
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="easy">Easy</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="hard">Hard</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <div className="w-full lg:w-80">
-                    <div className="mb-6">
-                      <h4 className="font-semibold text-primary mb-2">Across</h4>
-                      <ul className="space-y-2 text-sm text-muted-foreground">
-                         {crossword.clues.across.map(c => <li key={`across-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
-                      </ul>
+                  <div className="flex flex-col lg:flex-row gap-8">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">AI-Generated Crossword</h3>
+                          <Button variant="outline" size="sm" onClick={fetchCrossword} disabled={isCrosswordLoading || isPending}>
+                              <Repeat className="mr-2 h-4 w-4" />
+                              New Puzzle
+                          </Button>
+                      </div>
+                      <div 
+                          className="grid gap-px bg-foreground max-w-md aspect-square border"
+                          style={{ gridTemplateColumns: `repeat(${crossword.cols}, minmax(0, 1fr))` }}
+                      >
+                        {crossword.layout.map((row, rowIndex) => (
+                          row.map((cell, colIndex) => {
+                            if (cell === 'X') {
+                              return <div key={`${rowIndex}-${colIndex}`} className="bg-foreground" />;
+                            }
+                            
+                            const allClues: CrosswordClues[] = [...crossword.clues.across, ...crossword.clues.down];
+                            const clueNumber = allClues.find(c => c.row === rowIndex && c.col === colIndex)?.num;
+
+                            return (
+                              <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
+                                {clueNumber && <span className="absolute top-0 left-0.5 text-[10px] text-muted-foreground">{clueNumber}</span>}
+                                <Input
+                                  type="text"
+                                  maxLength={1}
+                                  data-row={rowIndex}
+                                  data-col={colIndex}
+                                  value={crosswordGrid[rowIndex]?.[colIndex] || ''}
+                                  onChange={(e) => handleCrosswordInputChange(rowIndex, colIndex, e.target.value)}
+                                  className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase"
+                                />
+                              </div>
+                            );
+                          })
+                        )).flat()}
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-primary mb-2">Down</h4>
-                       <ul className="space-y-2 text-sm text-muted-foreground">
-                        {crossword.clues.down.map(c => <li key={`down-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
-                      </ul>
+                    <div className="w-full lg:w-80">
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-primary mb-2">Across</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          {crossword.clues.across.map(c => <li key={`across-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-primary mb-2">Down</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          {crossword.clues.down.map(c => <li key={`down-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
+                        </ul>
+                      </div>
+                      <Button className="w-full mt-6" onClick={checkCrossword}>Check Puzzle</Button>
                     </div>
-                    <Button className="w-full mt-6" onClick={checkCrossword}>Check Puzzle</Button>
                   </div>
                 </div>
             )}
@@ -504,5 +540,3 @@ export default function MixologyLabPage() {
     </Card>
   );
 }
-
-    

@@ -3,7 +3,7 @@
 
 import {
   generateQuizQuestion,
-  GenerateQuizQuestionInputSchema,
+  GenerateQuizQuestionInput,
   GenerateQuizQuestionOutput,
 } from '@/ai/flows/generate-quiz-question';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/ai/flows/generate-what-am-i-puzzle';
 import {
     generateCrossword,
+    GenerateCrosswordInput,
     GenerateCrosswordOutput,
 } from '@/ai/flows/generate-crossword';
 import { z } from 'zod';
@@ -62,9 +63,17 @@ export async function generateWhatAmIPuzzleAction(): Promise<{ puzzle: GenerateW
   }
 }
 
-export async function generateCrosswordAction(): Promise<{ crossword: GenerateCrosswordOutput | null; error: string | null; }> {
+export async function generateCrosswordAction(input: GenerateCrosswordInput): Promise<{ crossword: GenerateCrosswordOutput | null; error: string | null; }> {
+    const validatedFields = quizActionSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return {
+            crossword: null,
+            error: 'Invalid input for crossword generation.',
+        };
+    }
+
     try {
-        const crossword = await generateCrossword();
+        const crossword = await generateCrossword(validatedFields.data);
         return {
             crossword,
             error: null,
@@ -77,5 +86,3 @@ export async function generateCrosswordAction(): Promise<{ crossword: GenerateCr
         };
     }
 }
-
-    
