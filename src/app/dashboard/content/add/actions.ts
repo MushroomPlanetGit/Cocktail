@@ -3,6 +3,9 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { collection, addDoc } from 'firebase/firestore';
+import { getAuthenticatedAppForUser } from '@/firebase/get-authenticated-app-for-user';
+import { redirect } from 'next/navigation';
 
 const cocktailFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -19,6 +22,17 @@ const cocktailFormSchema = z.object({
 });
 
 export async function addCocktailAction(prevState: any, formData: FormData) {
+    const { currentUser, firestore } = await getAuthenticatedAppForUser();
+
+    if (!currentUser || !firestore) {
+        return {
+            message: "You must be logged in to add a cocktail.",
+            errors: null,
+            success: false,
+        }
+    }
+
+
   const validatedFields = cocktailFormSchema.safeParse({
     name: formData.get('name'),
     slug: formData.get('slug'),
@@ -41,18 +55,26 @@ export async function addCocktailAction(prevState: any, formData: FormData) {
     };
   }
 
-  // In a real application, you would save this data to your database (e.g., Firestore).
-  // For now, we'll just log it to the console.
-  console.log('New cocktail submitted:', validatedFields.data);
-  
-  // Here is where you would add the logic to save to a database
-  // e.g., await saveCocktailToFirestore(validatedFields.data);
+  try {
+    const cocktailsCollection = collection(firestore, 'cocktails');
+    await addDoc(cocktailsCollection, {
+        ...validatedFields.data,
+        userId: currentUser.uid,
+        // The form fields for ingredients and tools are strings, but our UI expects arrays
+        // We will split them by newline for ingredients and comma for tools
+        ingredients: validatedFields.data.ingredients.split('\n').filter(i => i.trim() !== ''),
+        tools: validatedFields.data.tools.split(',').map(t => t.trim()).filter(t => t !== ''),
+    });
+  } catch (error) {
+     console.error("Error adding cocktail to Firestore:", error);
+     return {
+        message: 'There was a problem adding the cocktail to the database.',
+        errors: null,
+        success: false,
+     }
+  }
 
   revalidatePath('/dashboard/content');
-
-  return {
-    message: `Cocktail "${validatedFields.data.name}" has been added successfully!`,
-    errors: null,
-    success: true,
-  };
+  // Redirect after successful submission to prevent re-submissions
+  redirect('/dashboard/content');
 }

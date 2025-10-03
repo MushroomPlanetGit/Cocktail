@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered, Search } from "lucide-react";
+import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -14,20 +14,34 @@ import {
 } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { cocktails } from "@/lib/recipes";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Cocktail } from "@/types/cocktail";
 
 
 export default function ContentPage() {
     const [spirit, setSpirit] = useState('all');
     const [style, setStyle] = useState('all');
+    const firestore = useFirestore();
+
+    const cocktailsCollectionRef = useMemoFirebase(() => {
+      if (firestore) {
+        return collection(firestore, 'cocktails');
+      }
+      return null;
+    }, [firestore]);
+
+    const { data: cocktails, isLoading: isLoadingCocktails } = useCollection<Cocktail>(cocktailsCollectionRef);
 
     const filteredCocktails = useMemo(() => {
+        if (!cocktails) return [];
         return cocktails.filter(cocktail => {
             const spiritMatch = spirit === 'all' || cocktail.baseSpirit === spirit;
             const styleMatch = style === 'all' || cocktail.style === style;
             return spiritMatch && styleMatch;
         });
-    }, [spirit, style]);
+    }, [spirit, style, cocktails]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -98,7 +112,15 @@ export default function ContentPage() {
             </div>
         </CardHeader>
         <CardContent>
-          {filteredCocktails.length > 0 ? (
+          {isLoadingCocktails ? (
+             <div className="flex flex-col items-center justify-center p-12 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <h3 className="text-xl font-semibold mt-4">Loading Recipes...</h3>
+              <p className="text-muted-foreground mt-2">
+                Fetching the latest cocktail list from the database.
+              </p>
+            </div>
+          ) : filteredCocktails.length > 0 ? (
             <Accordion type="single" collapsible className="w-full">
               {filteredCocktails.map((cocktail) => (
                 <AccordionItem value={`item-${cocktail.id}`} key={cocktail.id}>

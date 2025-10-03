@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
@@ -25,12 +25,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { cocktails } from '@/lib/recipes';
 import { notFound } from 'next/navigation';
+import type { Cocktail } from '@/types/cocktail';
 
 export default function RecipeBookPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
-  const recipe = cocktails.find(c => c.slug === slug);
+  const [recipe, setRecipe] = useState<Cocktail | null>(null);
+  const [isLoadingRecipe, setIsLoadingRecipe] = useState(true);
 
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
@@ -46,6 +47,26 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
   const [sharedWith, setSharedWith] = useState('');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
 
+  // Fetch the main cocktail recipe from Firestore
+  useEffect(() => {
+    if (!firestore || !slug) return;
+    const fetchRecipe = async () => {
+      setIsLoadingRecipe(true);
+      const recipeDocRef = doc(firestore, 'cocktails', slug);
+      const recipeSnap = await getDoc(recipeDocRef);
+      if (recipeSnap.exists()) {
+        setRecipe({ id: recipeSnap.id, ...recipeSnap.data() } as Cocktail);
+      } else {
+        // If not found by slug, maybe it's an old hardcoded one.
+        // This part can be removed after migration.
+        console.error("Recipe not found in Firestore");
+      }
+      setIsLoadingRecipe(false);
+    }
+    fetchRecipe();
+  }, [firestore, slug]);
+
+
   // Create a memoized reference to the user's recipe note document
   const recipeNoteRef = useMemoFirebase(() => {
     if (user && firestore && slug) {
@@ -55,7 +76,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
   }, [user, firestore, slug]);
 
   // Use the useDoc hook to fetch data in real-time
-  const { data: recipeNote, isLoading } = useDoc<{ brands: string, notes: string, sharedWith: string, photoUrl?: string }>(recipeNoteRef);
+  const { data: recipeNote, isLoading: isLoadingNote } = useDoc<{ brands: string, notes: string, sharedWith: string, photoUrl?: string }>(recipeNoteRef);
   
   // Populate form fields when data is loaded from Firestore
   useEffect(() => {
@@ -72,6 +93,15 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
       setPhotoDataUrl(null);
     }
   }, [recipeNote]);
+
+  if (isLoadingRecipe) {
+     return (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-4 text-muted-foreground">Loading recipe...</p>
+        </div>
+      );
+  }
 
   if (!recipe) {
     notFound();
@@ -237,14 +267,14 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
           
           <Separator />
           
-          {isLoading && (
+          {isLoadingNote && (
             <div className="flex items-center justify-center min-h-[300px]">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="ml-4 text-muted-foreground">Loading your notes...</p>
             </div>
           )}
 
-          {!isLoading && (
+          {!isLoadingNote && (
             <>
               {/* Personalization Section */}
               <div className="grid md:grid-cols-2 gap-8">
@@ -337,7 +367,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
         <CardFooter className="flex justify-end gap-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={isLoading || !user || !recipeNote}>
+              <Button variant="destructive" disabled={isLoadingNote || !user || !recipeNote}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete from My Book
               </Button>
@@ -355,7 +385,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button onClick={handleSave} disabled={isLoading || !user}>Save Notes</Button>
+          <Button onClick={handleSave} disabled={isLoadingNote || !user}>Save Notes</Button>
         </CardFooter>
       </Card>
     </div>
