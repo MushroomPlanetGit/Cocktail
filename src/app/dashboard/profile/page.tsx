@@ -4,10 +4,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/componentsui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, User as UserIcon, Users, Globe, Lock, EyeOff, Image as ImageIcon, Target, CheckCircle, HelpCircle, Loader2, FlaskConical } from 'lucide-react';
+import { Upload, User as UserIcon, Users, Globe, Lock, EyeOff, Image as ImageIcon, Target, CheckCircle, HelpCircle, Loader2, FlaskConical, BarChart, BookHeart, UserCheck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
@@ -264,82 +264,46 @@ export default function ProfilePage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>My Cocktail Party</CardTitle>
-          <CardDescription>Manage photos, guests, and privacy for your event.</CardDescription>
+          <CardTitle>Your Data &amp; Privacy</CardTitle>
+          <CardDescription>We only collect data that is essential for providing and improving your experience. We never sell your data.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6">
-          <div>
-            <Label className="text-base font-medium">Party Photos</Label>
-            <div className="mt-2 grid grid-cols-3 md:grid-cols-5 gap-4">
-                {[1,2,3,4,5].map((i) => (
-                    <div key={i} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                       <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                ))}
-            </div>
-          </div>
-           <div>
-            <Label className="text-base font-medium">Guests</Label>
-             <div className="mt-2 flex items-center gap-2">
-                <div className="flex -space-x-2 overflow-hidden">
-                    <Avatar className="inline-block border-2 border-background">
-                        <AvatarImage src="https://picsum.photos/seed/guest1/100" />
-                        <AvatarFallback>G1</AvatarFallback>
-                    </Avatar>
-                     <Avatar className="inline-block border-2 border-background">
-                        <AvatarImage src="https://picsum.photos/seed/guest2/100" />
-                        <AvatarFallback>G2</AvatarFallback>
-                    </Avatar>
-                     <Avatar className="inline-block border-2 border-background">
-                        <AvatarImage src="https://picsum.photos/seed/guest3/100" />
-                        <AvatarFallback>G3</AvatarFallback>
-                    </Avatar>
-                </div>
-                 <p className="text-sm text-muted-foreground">You and 12 others</p>
-            </div>
-          </div>
-          <div>
-            <Label className="text-base font-medium">Privacy Settings</Label>
-            <RadioGroup defaultValue="private" className="mt-2 grid gap-4">
-              <Label className="flex items-center gap-4 p-4 rounded-lg border has-[:checked]:border-primary">
-                <RadioGroupItem value="public" id="public" />
-                <Globe className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-semibold">Public</p>
-                  <p className="text-sm text-muted-foreground">Anyone can see your party details.</p>
-                </div>
-              </Label>
-              <Label className="flex items-center gap-4 p-4 rounded-lg border has-[:checked]:border-primary">
-                <RadioGroupItem value="semi-private" id="semi-private" />
-                <Users className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-semibold">Semi-private</p>
-                  <p className="text-sm text-muted-foreground">Only your friends can see this.</p>
-                </div>
-              </Label>
-              <Label className="flex items-center gap-4 p-4 rounded-lg border has-[:checked]:border-primary">
-                <RadioGroupItem value="private" id="private" />
-                <Lock className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-semibold">Private</p>
-                  <p className="text-sm text-muted-foreground">Only you can see this.</p>
-                </div>
-              </Label>
-              <Label className="flex items-center gap-4 p-4 rounded-lg border has-[:checked]:border-primary">
-                <RadioGroupItem value="none" id="none" />
-                <EyeOff className="w-5 h-5 text-muted-foreground" />
-                 <div>
-                  <p className="font-semibold">None</p>
-                  <p className="text-sm text-muted-foreground">Don't show this on my profile.</p>
-                </div>
-              </Label>
-            </RadioGroup>
-          </div>
+        <CardContent>
+          <ul className="space-y-4 text-sm">
+            <li className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Your Profile &amp; Login</h4>
+                <p className="text-muted-foreground">Your email, name, and photo URL are used to securely identify you, personalize your profile, and allow you to log in across devices.</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <BookHeart className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Your Inventory &amp; Notes</h4>
+                <p className="text-muted-foreground">The ingredients in "My Bar" and your personal "Recipe Book" notes are stored to power features like AI cocktail suggestions and to save your personalizations.</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <BarChart className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Your Learning Progress</h4>
+                <p className="text-muted-foreground">We track your quiz scores and puzzle completions to display your progress on this page and provide encouraging milestone messages.</p>
+              </div>
+            </li>
+          </ul>
         </CardContent>
         <CardFooter>
-          <Button>Save Party Info</Button>
+            <p className="text-xs text-muted-foreground">All data is stored securely using Firebase and is subject to Google's Privacy Policy. You can delete your account and all associated data at any time.</p>
         </CardFooter>
       </Card>
     </div>
   );
 }
+
+    
