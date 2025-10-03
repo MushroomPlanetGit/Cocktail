@@ -64,18 +64,38 @@ export default function MyBarPage() {
 
     cocktails.forEach(recipe => {
         let ownedCount = 0;
-        recipe.ingredients.forEach(ing => {
-            // Basic check: does the ingredient name from the recipe appear in our owned list?
-            const ingredientName = ing.split(' ').slice(1).join(' ').toLowerCase();
-            if (ownedIngredients.has(ingredientName)) {
-                ownedCount++;
+        const recipeIngredients = new Set();
+        
+        recipe.ingredients.forEach(fullIngredientString => {
+            // A more robust way to get the core ingredient name
+            const parts = fullIngredientString.toLowerCase().split(' ');
+            // This is still a simplification, but tries to find the main ingredient name
+            // e.g. "freshly brewed espresso" -> "espresso"
+            // e.g. "coffee liqueur" -> "coffee liqueur"
+            let coreIngredient = parts.slice(1).join(' ').replace(/for garnish/,'').trim();
+            if (coreIngredient.includes('juice')) coreIngredient = 'juice'; // simplify juices
+            if (coreIngredient.includes('liqueur')) coreIngredient = 'liqueur';
+            if (coreIngredient.includes('syrup')) coreIngredient = 'syrup';
+
+
+            // Find if any of our owned ingredients match part of the recipe ingredient name
+            for(const owned of ownedIngredients) {
+                if(fullIngredientString.toLowerCase().includes(owned)) {
+                    if (!recipeIngredients.has(owned)) {
+                         recipeIngredients.add(owned);
+                         ownedCount++;
+                    }
+                    break;
+                }
             }
         });
         
+        const matchPercentage = Math.round((ownedCount / recipe.ingredients.length) * 100);
+
         if (ownedCount > 0) {
             results.push({
                 name: recipe.name,
-                match: Math.round((ownedCount / recipe.ingredients.length) * 100),
+                match: matchPercentage,
                 link: '/dashboard/content' // This could be updated to a dynamic link
             });
         }
