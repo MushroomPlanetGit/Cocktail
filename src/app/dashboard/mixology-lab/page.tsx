@@ -17,7 +17,7 @@ import type { GenerateWhatAmIPuzzleOutput } from '@/ai/flows/generate-what-am-i-
 import type { CrosswordClues, GenerateCrosswordOutput } from '@/ai/flows/generate-crossword';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, doc, increment, writeBatch } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import type { Cocktail } from '@/types/cocktail';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { UserLearning } from '@/types/learning';
