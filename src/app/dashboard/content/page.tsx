@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered, Search } from "lucide-react";
@@ -20,6 +20,14 @@ import { cocktails } from "@/lib/recipes";
 export default function ContentPage() {
     const [spirit, setSpirit] = useState('all');
     const [style, setStyle] = useState('all');
+
+    const filteredCocktails = useMemo(() => {
+        return cocktails.filter(cocktail => {
+            const spiritMatch = spirit === 'all' || cocktail.baseSpirit === spirit;
+            const styleMatch = style === 'all' || cocktail.style === style;
+            return spiritMatch && styleMatch;
+        });
+    }, [spirit, style]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -88,9 +96,9 @@ export default function ContentPage() {
             </div>
         </CardHeader>
         <CardContent>
-          {cocktails.length > 0 ? (
+          {filteredCocktails.length > 0 ? (
             <Accordion type="single" collapsible className="w-full">
-              {cocktails.map((cocktail) => (
+              {filteredCocktails.map((cocktail) => (
                 <AccordionItem value={`item-${cocktail.id}`} key={cocktail.id}>
                   <AccordionTrigger>
                     <div className="flex items-center gap-4">
@@ -145,9 +153,9 @@ export default function ContentPage() {
             </Accordion>
           ) : (
             <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg text-center">
-              <h3 className="text-xl font-semibold">No cocktails yet</h3>
+              <h3 className="text-xl font-semibold">No Matching Cocktails</h3>
               <p className="text-muted-foreground mt-2">
-                Click "Add Cocktail" to create your first recipe.
+                Try adjusting your filters to find more recipes.
               </p>
             </div>
           )}

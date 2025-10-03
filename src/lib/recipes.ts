@@ -3,6 +3,8 @@ export interface Cocktail {
   id: number;
   name: string;
   description: string;
+  baseSpirit: 'vodka' | 'gin' | 'rum' | 'tequila' | 'whiskey';
+  style: 'classic' | 'modern' | 'tropical' | 'sour';
   ingredients: string[];
   directions: string;
   tools: string[];
@@ -16,6 +18,8 @@ export const cocktails: Cocktail[] = [
     id: 1,
     name: "Espresso Martini",
     description: "A bold and energizing coffee-flavored cocktail.",
+    baseSpirit: 'vodka',
+    style: 'modern',
     ingredients: [
       "2 oz Vodka",
       "1 oz Coffee Liqueur",
@@ -35,6 +39,8 @@ export const cocktails: Cocktail[] = [
     id: 2,
     name: "Classic Margarita",
     description: "A refreshing tequila-based cocktail with a citrus kick.",
+    baseSpirit: 'tequila',
+    style: 'sour',
     ingredients: [
       "2 oz Blanco Tequila",
       "1 oz Lime Juice",
@@ -48,12 +54,14 @@ export const cocktails: Cocktail[] = [
     history:
       "The Margarita's origins are debated, with several claims from the 1930s and 1940s. One popular story attributes it to Carlos 'Danny' Herrera, who supposedly created it for a customer allergic to most spirits but not tequila.",
     glassware: "Margarita Glass or Rocks Glass",
-    fact: "December 13th is National Margarita Day in the United States.",
+    fact: "February 22nd is National Margarita Day in the United States.",
   },
   {
     id: 3,
     name: "Mojito",
     description: "A classic Cuban highball with mint and lime.",
+    baseSpirit: 'rum',
+    style: 'classic',
     ingredients: [
       "2 oz White Rum",
       "1 oz Fresh Lime Juice",
