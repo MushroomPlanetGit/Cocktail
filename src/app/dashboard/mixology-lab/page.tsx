@@ -23,6 +23,36 @@ function shuffleArray<T>(array: T[]): T[] {
   return [...array].sort(() => Math.random() - 0.5);
 }
 
+const crosswordLayout = [
+  ["M", "O", "J", "I", "T", "O", "X", "R", "U", "M"],
+  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
+  ["G", "I", "N", "X", "L", "I", "M", "E", "X", "X"],
+  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
+  ["V", "O", "D", "K", "A", "X", "S", "A", "L", "T"],
+  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
+  ["T", "E", "Q", "U", "I", "L", "A", "X", "X", "X"],
+  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
+  ["S", "U", "G", "A", "R", "X", "B", "I", "T", "T", "E", "R", "S"],
+  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
+];
+
+const crosswordClues = {
+    across: [
+        { num: 1, clue: "Classic Cuban highball with mint and lime", row: 0, col: 0, length: 6 },
+        { num: 3, clue: "Zesty citrus fruit in a Margarita", row: 2, col: 4, length: 4 },
+        { num: 5, clue: "Spirit often distilled from grain or potatoes", row: 4, col: 0, length: 5 },
+        { num: 6, clue: "Used to rim a Margarita glass", row: 4, col: 7, length: 4 },
+        { num: 7, clue: "Spirit made from the blue agave plant", row: 6, col: 0, length: 7 },
+        { num: 8, clue: "Sweetener used in many cocktails", row: 8, col: 0, length: 5 },
+        { num: 9, clue: "Aromatic ingredient, essential for an Old Fashioned", row: 8, col: 6, length: 7 },
+    ],
+    down: [
+        { num: 1, clue: "Base spirit of a classic Martini", row: 0, col: 0, length: 3},
+        { num: 2, clue: "Base spirit of a Daiquiri", row: 0, col: 9, length: 3 },
+        { num: 4, clue: "Common garnish or ingredient in sours", row: 2, col: 4, length: 4 },
+    ]
+};
+
 
 export default function MixologyLabPage() {
   const [category, setCategory] = useState('random');
@@ -46,6 +76,14 @@ export default function MixologyLabPage() {
   const [flashcardIndex, setFlashcardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const currentFlashcard: Cocktail = useMemo(() => cocktails[flashcardIndex], [flashcardIndex]);
+  
+  const [grid, setGrid] = useState<string[][]>(Array(10).fill(null).map(() => Array(10).fill('')));
+
+  const handleInputChange = (row: number, col: number, value: string) => {
+    const newGrid = grid.map(r => [...r]);
+    newGrid[row][col] = value.toUpperCase();
+    setGrid(newGrid);
+  };
 
 
   // Memoize the shuffled answers so they don't re-shuffle on every render
@@ -297,29 +335,41 @@ export default function MixologyLabPage() {
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-4">Cocktail Crossword #1</h3>
                 <div className="grid grid-cols-10 grid-rows-10 gap-px bg-foreground max-w-sm aspect-square border">
-                  {/* Placeholder for crossword grid cells */}
-                  {Array.from({ length: 100 }).map((_, i) => (
-                    <div key={i} className="bg-background flex items-center justify-center">
-                      <span className="text-xs"></span>
-                    </div>
-                  ))}
+                  {crosswordLayout.map((row, rowIndex) => (
+                    row.map((cell, colIndex) => {
+                      if (cell === 'X') {
+                        return <div key={`${rowIndex}-${colIndex}`} className="bg-foreground" />;
+                      }
+                      
+                      const clueNumber = [...crosswordClues.across, ...crosswordClues.down].find(c => c.row === rowIndex && c.col === colIndex)?.num;
+
+                      return (
+                        <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
+                          {clueNumber && <span className="absolute top-0 left-0.5 text-xs">{clueNumber}</span>}
+                           <Input
+                            type="text"
+                            maxLength={1}
+                            value={grid[rowIndex]?.[colIndex] || ''}
+                            onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
+                            className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary"
+                          />
+                        </div>
+                      );
+                    })
+                  )).flat()}
                 </div>
               </div>
               <div className="w-full lg:w-80">
                 <div className="mb-6">
                   <h4 className="font-semibold text-primary mb-2">Across</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>1. A classic Cuban highball</li>
-                    <li>5. Spirit made from agave</li>
-                    <li>7. Zesty citrus fruit in a Margarita</li>
+                     {crosswordClues.across.map(c => <li key={`across-${c.num}`}>{c.num}. {c.clue}</li>)}
                   </ul>
                 </div>
                 <div>
                   <h4 className="font-semibold text-primary mb-2">Down</h4>
                    <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>2. Bitter Italian liqueur in a Negroni</li>
-                    <li>3. The "wake me up" ingredient in an Espresso Martini</li>
-                    <li>4. A popular whiskey-based cocktail</li>
+                    {crosswordClues.down.map(c => <li key={`down-${c.num}`}>{c.num}. {c.clue}</li>)}
                   </ul>
                 </div>
                 <Button className="w-full mt-6">Check Puzzle</Button>
@@ -412,3 +462,5 @@ export default function MixologyLabPage() {
     </Card>
   );
 }
+
+    
