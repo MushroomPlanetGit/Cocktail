@@ -5,8 +5,9 @@ import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { useUser } from './provider';
 import { initiateAnonymousSignIn } from './non-blocking-login';
-import { Auth, signOut } from 'firebase/auth';
+import { Auth, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -14,14 +15,26 @@ interface FirebaseClientProviderProps {
 
 function AuthHandler({ auth }: { auth: Auth }) {
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // If the user is loaded and is null, it means they are not logged in.
-    // In this case, we initiate an anonymous sign-in.
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
+    const unsubscribe = onAuthStateChanged(auth, (newUser) => {
+      // If the user is loaded, is not null, and is not anonymous,
+      // and they are currently on the login page, redirect them to the dashboard.
+      if (newUser && !newUser.isAnonymous && pathname === '/login') {
+        router.push('/dashboard');
+      }
+
+      // If the user is not logged in (and not in the process of loading),
+      // initiate an anonymous sign-in. This gives them a temporary identity.
+      if (!isUserLoading && !newUser) {
+        initiateAnonymousSignIn(auth);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, isUserLoading, pathname, router]);
 
   return null;
 }
@@ -41,14 +54,29 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   useEffect(() => {
     const handleSignOut = async () => {
         if (firebaseServices.auth.currentUser) {
-            await signOut(firebaseServices.auth);
+            // We only want to sign out if the user is NOT anonymous.
+            // This prevents the anonymous user from being signed out on every page refresh.
+            if (!firebaseServices.auth.currentUser.isAnonymous) {
+                await signOut(firebaseServices.auth);
+            }
         }
     };
 
-    window.addEventListener('beforeunload', handleSignOut);
+    // This is a bit of a workaround. When a server action causes a redirect,
+    // the 'beforeunload' event is fired. We use this to sign the user out
+    // from the client SDK, ensuring the client state is in sync with the server.
+    const handleRedirect = (event: BeforeUnloadEvent) => {
+      // Check if the navigation is to the login page, which implies a sign-out.
+      // This is not perfect, but it's a reasonable heuristic.
+      if (document.activeElement?.getAttribute('href') === '/login') {
+        handleSignOut();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleRedirect);
 
     return () => {
-        window.removeEventListener('beforeunload', handleSignOut);
+        window.removeEventListener('beforeunload', handleRedirect);
     };
   }, [firebaseServices.auth]);
 
@@ -63,4 +91,3 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     </FirebaseProvider>
   );
 }
-    
