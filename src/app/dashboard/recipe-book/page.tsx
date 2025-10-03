@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { doc } from 'firebase/firestore';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Camera, PlusCircle, Trash2, Upload, Users, Wine, BookHeart, Loader2, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 
@@ -50,6 +61,12 @@ export default function RecipeBookPage() {
       setNotes(recipeNote.notes || '');
       setSharedWith(recipeNote.sharedWith || '');
       setPhotoDataUrl(recipeNote.photoUrl || null);
+    } else {
+      // If the document is deleted or doesn't exist, clear the form
+      setBrands('');
+      setNotes('');
+      setSharedWith('');
+      setPhotoDataUrl(null);
     }
   }, [recipeNote]);
 
@@ -68,7 +85,7 @@ export default function RecipeBookPage() {
       notes,
       sharedWith,
       recipeId: RECIPE_ID, // Store the recipe ID for context
-      photoUrl: photoDataUrl, // We'll handle uploads later
+      photoUrl: photoDataUrl,
     };
 
     setDocumentNonBlocking(recipeNoteRef, noteData, { merge: true });
@@ -76,6 +93,24 @@ export default function RecipeBookPage() {
     toast({
       title: 'Notes Saved!',
       description: 'Your notes for Espresso Martini have been saved.',
+    });
+  };
+  
+  const handleDelete = () => {
+    if (!recipeNoteRef) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to delete notes.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    deleteDocumentNonBlocking(recipeNoteRef);
+    
+    toast({
+      title: 'Notes Deleted',
+      description: 'Your notes for this recipe have been removed from your book.',
     });
   };
 
@@ -274,11 +309,27 @@ export default function RecipeBookPage() {
           )}
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
-            <Button variant="destructive" disabled={isLoading || !user}>
-                <Trash2 className="mr-2 h-4 w-4"/>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isLoading || !user || !recipeNote}>
+                <Trash2 className="mr-2 h-4 w-4" />
                 Delete from My Book
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading || !user}>Save Notes</Button>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your notes and photos for the Espresso Martini.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button onClick={handleSave} disabled={isLoading || !user}>Save Notes</Button>
         </CardFooter>
       </Card>
     </div>
