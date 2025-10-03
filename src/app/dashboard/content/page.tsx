@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered, Search, Loader2 } from "lucide-react";
+import { PlusCircle, Martini, BookPlus, BookOpenCheck, History, GlassWater, Sparkles, ShoppingCart, ListOrdered, Search, Loader2, Brain } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -13,16 +13,22 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { Cocktail } from "@/types/cocktail";
+import { smartSearchAction } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function ContentPage() {
     const [spirit, setSpirit] = useState('all');
     const [style, setStyle] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<string[] | null>(null);
+    const [isSearching, startSearchTransition] = useTransition();
+    const { toast } = useToast();
     const firestore = useFirestore();
 
     const cocktailsCollectionRef = useMemoFirebase(() => {
@@ -34,14 +40,50 @@ export default function ContentPage() {
 
     const { data: cocktails, isLoading: isLoadingCocktails } = useCollection<Cocktail>(cocktailsCollectionRef);
 
+    const handleSearch = () => {
+        if (!searchQuery.trim()) {
+            setSearchResults(null); // Clear search if query is empty
+            return;
+        }
+        startSearchTransition(async () => {
+            const result = await smartSearchAction({ query: searchQuery, cocktails: cocktails || [] });
+            if (result.error) {
+                toast({
+                    title: "Search Error",
+                    description: result.error,
+                    variant: "destructive",
+                });
+                setSearchResults([]);
+            } else {
+                setSearchResults(result.cocktailSlugs || []);
+                 if (result.cocktailSlugs?.length === 0) {
+                     toast({
+                        title: "No Results",
+                        description: "Our AI couldn't find any cocktails matching your search.",
+                    });
+                }
+            }
+        });
+    }
+
     const filteredCocktails = useMemo(() => {
         if (!cocktails) return [];
-        return cocktails.filter(cocktail => {
+
+        let results = cocktails;
+
+        // Apply smart search results first
+        if (searchResults !== null) {
+            const searchSlugs = new Set(searchResults);
+            results = results.filter(cocktail => searchSlugs.has(cocktail.slug));
+        }
+
+        // Then apply filters
+        return results.filter(cocktail => {
             const spiritMatch = spirit === 'all' || cocktail.baseSpirit === spirit;
             const styleMatch = style === 'all' || cocktail.style === style;
             return spiritMatch && styleMatch;
         });
-    }, [spirit, style, cocktails]);
+    }, [spirit, style, cocktails, searchResults]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -66,7 +108,7 @@ export default function ContentPage() {
       <Card>
         <CardHeader>
           <CardTitle>Cocktail Index</CardTitle>
-          <CardDescription>Browse recipes, or filter by spirit and style to find your next favorite drink.</CardDescription>
+          <CardDescription>Browse recipes, filter, or use our AI-powered Smart Search to find your next favorite drink.</CardDescription>
            <Separator className="my-4" />
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="grid gap-2">
@@ -109,15 +151,35 @@ export default function ContentPage() {
                         </Link>
                     </Button>
                 </div>
+                <div className="grid gap-2 sm:col-span-2 md:col-span-3">
+                    <label className="text-sm font-medium">AI Smart Search</label>
+                    <div className="flex gap-2">
+                        <Input 
+                            placeholder="e.g., 'a refreshing summer drink with gin'" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        />
+                        <Button onClick={handleSearch} disabled={isSearching}>
+                            {isSearching ? <Loader2 className="h-4 w-4 animate-spin"/> : <Brain className="h-4 w-4" />}
+                            <span className="hidden sm:inline ml-2">Search</span>
+                        </Button>
+                         {searchResults !== null && (
+                            <Button variant="ghost" onClick={() => { setSearchResults(null); setSearchQuery(''); }}>
+                                Clear
+                            </Button>
+                        )}
+                    </div>
+                </div>
             </div>
         </CardHeader>
         <CardContent>
-          {isLoadingCocktails ? (
+          {isLoadingCocktails || isSearching ? (
              <div className="flex flex-col items-center justify-center p-12 text-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <h3 className="text-xl font-semibold mt-4">Loading Recipes...</h3>
+              <h3 className="text-xl font-semibold mt-4">{isSearching ? 'AI is searching...' : 'Loading Recipes...'}</h3>
               <p className="text-muted-foreground mt-2">
-                Fetching the latest cocktail list from the database.
+                {isSearching ? 'Please wait while we find the perfect cocktails for you.' : 'Fetching the latest cocktail list from the database.'}
               </p>
             </div>
           ) : filteredCocktails.length > 0 ? (
@@ -179,7 +241,7 @@ export default function ContentPage() {
             <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg text-center">
               <h3 className="text-xl font-semibold">No Matching Cocktails</h3>
               <p className="text-muted-foreground mt-2">
-                Try adjusting your filters to find more recipes.
+                Try adjusting your filters or clearing your search to find more recipes.
               </p>
             </div>
           )}
