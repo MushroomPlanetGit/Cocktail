@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/componentsui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, User as UserIcon, Users, Globe, Lock, EyeOff, Image as ImageIcon, Target, CheckCircle, HelpCircle, Loader2 } from 'lucide-react';
+import { Upload, User as UserIcon, Users, Globe, Lock, EyeOff, Image as ImageIcon, Target, CheckCircle, HelpCircle, Loader2, FlaskConical } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
@@ -17,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/types/user';
 import type { Cocktail } from '@/types/cocktail';
 import type { UserLearning } from '@/types/learning';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -144,6 +146,8 @@ export default function ProfilePage() {
   const accuracy = learningProgress && learningProgress.totalQuizzesTaken > 0
     ? Math.round((learningProgress.correctQuizAnswers / learningProgress.totalQuizzesTaken) * 100)
     : 0;
+  
+  const hasLearningData = learningProgress && learningProgress.totalQuizzesTaken > 0;
 
   return (
     <div className="grid gap-6">
@@ -215,7 +219,7 @@ export default function ProfilePage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="ml-4 text-muted-foreground">Loading your stats...</p>
           </CardContent>
-        ) : (
+        ) : hasLearningData ? (
           <>
             <CardContent className="grid gap-6">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
@@ -244,6 +248,17 @@ export default function ProfilePage() {
               <Button variant="outline" disabled>Review Missed Questions</Button>
             </CardFooter>
           </>
+        ) : (
+           <CardContent className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed m-6 rounded-lg">
+              <FlaskConical className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold">Start Your Learning Journey</h3>
+              <p className="text-muted-foreground mt-2 max-w-sm">
+                You haven't taken any quizzes yet. Head over to the Mixology Lab to test your knowledge!
+              </p>
+              <Button asChild className="mt-4">
+                  <Link href="/dashboard/mixology-lab">Go to Mixology Lab</Link>
+              </Button>
+            </CardContent>
         )}
       </Card>
       
@@ -328,5 +343,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

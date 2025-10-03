@@ -239,10 +239,18 @@ export default function ContentPage() {
             </Accordion>
           ) : (
             <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg text-center">
-              <h3 className="text-xl font-semibold">No Matching Cocktails</h3>
-              <p className="text-muted-foreground mt-2">
-                Try adjusting your filters or clearing your search to find more recipes.
+              <h3 className="text-xl font-semibold">No Matching Cocktails Found</h3>
+              <p className="text-muted-foreground mt-2 max-w-md">
+                {searchResults !== null 
+                  ? "Our AI couldn't find a match for your search. Try rephrasing it or clear the search to see all recipes."
+                  : "Try adjusting your filters to find more recipes."
+                }
               </p>
+              {searchResults !== null && (
+                 <Button variant="ghost" onClick={() => { setSearchResults(null); setSearchQuery(''); }} className="mt-4">
+                    Clear Search
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

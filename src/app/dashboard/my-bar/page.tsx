@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2, Search, Camera, Bot, Martini, Loader2, Sparkles, CheckCircle, ShoppingCart, RefreshCcw } from 'lucide-react';
+import { PlusCircle, Trash2, Search, Camera, Bot, Martini, Loader2, Sparkles, CheckCircle, ShoppingCart, RefreshCcw, Wine } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -337,8 +338,20 @@ export default function MyBarPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground py-12 text-center border-2 border-dashed rounded-lg">
-                  {user ? "You haven't added any ingredients yet." : "Please sign in to manage your bar."}
+                 <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg text-center">
+                  <Wine className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold">Your Bar is Empty</h3>
+                  <p className="text-muted-foreground mt-2 max-w-sm">
+                    {user 
+                      ? "Add bottles and ingredients to your inventory to get personalized cocktail suggestions."
+                      : "Please sign in to manage your bar and get cocktail suggestions."
+                    }
+                  </p>
+                   {!user && (
+                    <Button asChild className="mt-4">
+                      <Link href="/login">Sign In</Link>
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
