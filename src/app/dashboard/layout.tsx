@@ -48,7 +48,6 @@ import {
 import { useUser } from '@/firebase';
 import { signOutAction } from '@/app/login/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { deployAction } from './actions';
 
 
 const navItems = [
@@ -210,11 +209,11 @@ export default function DashboardLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <form action={deployAction} className="w-full">
-            <Button className='w-full' type="submit">
+          <Button className='w-full' asChild>
+            <Link href="https://github.com/FirebaseExtended/studio-genkit-next-project-template/actions/workflows/firebase-hosting-pull-request.yml" target="_blank" rel="noopener noreferrer">
               <Rocket className="mr-2 h-4 w-4" /> Deploy
-            </Button>
-          </form>
+            </Link>
+          </Button>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -232,5 +231,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
