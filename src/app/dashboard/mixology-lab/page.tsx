@@ -15,13 +15,8 @@ import { generateQuizQuestionAction, generateWhatAmIPuzzleAction } from './actio
 import type { GenerateQuizQuestionOutput } from '@/ai/flows/generate-quiz-question';
 import type { GenerateWhatAmIPuzzleOutput } from '@/ai/flows/generate-what-am-i-puzzle';
 import { useToast } from '@/hooks/use-toast';
+import { cocktails, type Cocktail } from '@/lib/recipes';
 
-
-const flashcard = {
-  id: 'fc1',
-  term: 'Old Fashioned',
-  definition: '2 oz Bourbon or Rye Whiskey, 1 Sugar Cube, 2 dashes Angostura Bitters, Orange Peel for garnish.'
-};
 
 // Helper function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -36,7 +31,6 @@ export default function MixologyLabPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [isFlipped, setIsFlipped] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [question, setQuestion] = useState<GenerateQuizQuestionOutput | null>(null);
   const { toast } = useToast();
@@ -47,6 +41,11 @@ export default function MixologyLabPage() {
   const [guess, setGuess] = useState('');
   const [showPuzzleResult, setShowPuzzleResult] = useState(false);
   const [isGuessCorrect, setIsGuessCorrect] = useState(false);
+  
+  // Flashcard state
+  const [flashcardIndex, setFlashcardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const currentFlashcard: Cocktail = useMemo(() => cocktails[flashcardIndex], [flashcardIndex]);
 
 
   // Memoize the shuffled answers so they don't re-shuffle on every render
@@ -129,6 +128,12 @@ export default function MixologyLabPage() {
     // For now, this just gets another question with the same settings
     startQuiz();
   }
+  
+  const nextFlashcard = () => {
+    setIsFlipped(false);
+    setFlashcardIndex((prevIndex) => (prevIndex + 1) % cocktails.length);
+  }
+
 
   if (quizStarted) {
     if (isPending || !question) {
@@ -366,11 +371,18 @@ export default function MixologyLabPage() {
             <div className="max-w-md mx-auto">
               <h3 className="text-lg font-semibold text-center mb-4">Flashcards</h3>
                 <Card className="aspect-video flex items-center justify-center p-6 text-center relative cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
-                  <div className={cn("transition-transform duration-500", {"[transform:rotateY(180deg)]": isFlipped})}>
+                  <div className={cn("transition-transform duration-500 w-full", {"[transform:rotateY(180deg)]": isFlipped})}>
                     {!isFlipped ? (
-                      <CardTitle>{flashcard.term}</CardTitle>
+                      <CardTitle>{currentFlashcard.name}</CardTitle>
                     ) : (
-                      <p className="text-muted-foreground [transform:rotateY(180deg)]">{flashcard.definition}</p>
+                      <div className="text-muted-foreground [transform:rotateY(180deg)]">
+                        <p className='font-semibold'>Ingredients:</p>
+                        <ul className='list-disc pl-5 mb-2 text-sm text-left'>
+                            {currentFlashcard.ingredients.map(ing => <li key={ing}>{ing}</li>)}
+                        </ul>
+                         <p className='font-semibold'>Directions:</p>
+                         <p className='text-sm text-left'>{currentFlashcard.directions}</p>
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -386,7 +398,7 @@ export default function MixologyLabPage() {
                         Mark as Learned
                         <Check className="ml-2 h-4 w-4" />
                     </Button>
-                    <Button>
+                    <Button onClick={nextFlashcard}>
                         Next Card
                         <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
