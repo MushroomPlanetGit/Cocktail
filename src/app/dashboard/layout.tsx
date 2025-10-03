@@ -33,6 +33,7 @@ import {
   PlusCircle,
   LogOut,
   LogIn,
+  BrainCircuit,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -192,6 +193,14 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                   <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/dashboard/ai-cocktail-generator'}>
+                      <Link href="/dashboard/ai-cocktail-generator">
+                        <BrainCircuit />
+                        <span>AI Generator</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroup>
           </SidebarMenu>
@@ -207,7 +216,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
              <SidebarTrigger />
              <h1 className="text-lg font-semibold font-headline">
-               {[...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}].find(item => item.href === pathname)?.label || 'Dashboard'}
+               {[...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}, {href: '/dashboard/ai-cocktail-generator', label: 'AI Cocktail Generator'}].find(item => item.href === pathname)?.label || 'Dashboard'}
              </h1>
           </div>
           <UserMenu />
