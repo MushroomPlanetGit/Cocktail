@@ -208,13 +208,6 @@ export default function DashboardLayout({
               </SidebarGroup>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-          <Button className='w-full' asChild>
-            <Link href="https://github.com/FirebaseExtended/studio-genkit-next-project-template/actions/workflows/firebase-hosting-pull-request.yml" target="_blank" rel="noopener noreferrer">
-              <Rocket className="mr-2 h-4 w-4" /> Deploy
-            </Link>
-          </Button>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex items-center justify-between h-14 px-4 border-b bg-background/80 backdrop-blur-sm sm:px-6">
