@@ -256,7 +256,7 @@ export default function RecipeBookPage() {
                     </h3>
                     <div className="w-full aspect-video rounded-md bg-muted overflow-hidden relative border">
                         {photoDataUrl ? (
-                            <Image src={photoDataUrl} alt="My Cocktail" fill objectFit="cover" />
+                            <Image src={photoDataUrl} alt="My Cocktail" layout="fill" objectFit="cover" />
                         ) : (
                             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                         )}
