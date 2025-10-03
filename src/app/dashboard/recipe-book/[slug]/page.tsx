@@ -428,5 +428,3 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
     </div>
   );
 }
-
-    
