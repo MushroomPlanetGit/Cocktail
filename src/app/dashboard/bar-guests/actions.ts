@@ -102,5 +102,3 @@ export async function removeConnectionAction(connectionId: string) {
         return { error: 'Failed to remove guest.' };
     }
 }
-
-    

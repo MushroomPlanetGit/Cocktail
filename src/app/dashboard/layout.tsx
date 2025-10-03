@@ -19,11 +19,8 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Box,
-  LayoutGrid,
   Palette,
-  Sparkles,
   Smartphone,
-  Rocket,
   User,
   BookUser,
   Home,

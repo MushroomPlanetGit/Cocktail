@@ -9,5 +9,3 @@ export interface UserProfile {
     favoriteCocktail?: string;
     isAnonymous?: boolean;
 }
-
-    

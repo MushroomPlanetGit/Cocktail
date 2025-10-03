@@ -1,3 +1,4 @@
+
 export interface UserLearning {
   id: string;
   userId: string;
@@ -5,5 +6,3 @@ export interface UserLearning {
   correctQuizAnswers: number;
   puzzlesSolved: number;
 }
-
-    

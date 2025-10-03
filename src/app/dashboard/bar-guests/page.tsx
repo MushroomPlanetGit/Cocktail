@@ -249,5 +249,3 @@ export default function BarGuestsPage() {
     </div>
   );
 }
-
-    

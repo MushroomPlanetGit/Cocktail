@@ -25,5 +25,3 @@ export interface RecipeNote {
   photoUrl?: string;
   updatedAt: any;
 }
-
-    
