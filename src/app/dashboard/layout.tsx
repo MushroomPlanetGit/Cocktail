@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -33,6 +34,7 @@ import {
   FlaskConical,
   BookOpenCheck,
   Lightbulb,
+  PlusCircle,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -46,7 +48,6 @@ import {
 const navItems = [
   { href: '/dashboard', label: 'Templates', icon: LayoutGrid },
   { href: '/dashboard/customize', label: 'Customize', icon: Palette },
-  { href: '/dashboard/content', label: 'Master Recipes', icon: BookOpenCheck },
   { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
   { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
@@ -87,6 +88,30 @@ export default function DashboardLayout({
             ))}
              <SidebarGroup>
                 <SidebarGroupLabel className="flex items-center">
+                  <BookOpenCheck />
+                  <span>Master Recipes</span>
+                </SidebarGroupLabel>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/dashboard/content'}>
+                      <Link href="/dashboard/content">
+                        <BookOpenCheck />
+                        <span>All Recipes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/dashboard/content/add'}>
+                      <Link href="/dashboard/content/add">
+                        <PlusCircle />
+                        <span>Add Cocktail</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroup>
+             <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center">
                   <FlaskConical />
                   <span>Mixology Lab</span>
                 </SidebarGroupLabel>
@@ -114,7 +139,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
              <SidebarTrigger />
              <h1 className="text-lg font-semibold font-headline">
-               {navItems.find(item => item.href === pathname)?.label || 'Dashboard'}
+               {[...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}].find(item => item.href === pathname)?.label || 'Dashboard'}
              </h1>
           </div>
 

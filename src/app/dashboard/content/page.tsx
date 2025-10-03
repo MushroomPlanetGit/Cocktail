@@ -41,9 +41,11 @@ export default function ContentPage() {
             An official list of classic and modern cocktails.
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Cocktail
+        <Button asChild>
+          <Link href="/dashboard/content/add">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Cocktail
+          </Link>
         </Button>
       </div>
 
