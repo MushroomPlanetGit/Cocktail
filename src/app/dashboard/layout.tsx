@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -16,15 +15,12 @@ import {
   SidebarInset,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import {
   Box,
   LayoutGrid,
   Palette,
-  FileText,
   Sparkles,
   Smartphone,
   Rocket,
@@ -35,6 +31,8 @@ import {
   BookOpenCheck,
   Lightbulb,
   PlusCircle,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -44,6 +42,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUser } from '@/firebase';
+import { signOutAction } from '@/app/login/actions';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const navItems = [
   { href: '/dashboard', label: 'Templates', icon: LayoutGrid },
@@ -53,6 +55,72 @@ const navItems = [
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
   { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
+
+function UserMenu() {
+  const { user, isUserLoading } = useUser();
+
+  if (isUserLoading) {
+    return (
+       <Button variant="outline" size="icon" className="overflow-hidden rounded-full">
+          <User />
+        </Button>
+    )
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon" className="overflow-hidden rounded-full">
+           <Avatar>
+              <AvatarImage src={user?.photoURL ?? undefined} />
+              <AvatarFallback>
+                <User />
+              </AvatarFallback>
+            </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {user && !user.isAnonymous ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile">Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>Support</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <form action={signOutAction} className="w-full">
+                <button type="submit" className="w-full">
+                    <DropdownMenuItem>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                    </DropdownMenuItem>
+                </button>
+            </form>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/login">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/login">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Sign Up
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 
 export default function DashboardLayout({
   children,
@@ -142,27 +210,11 @@ export default function DashboardLayout({
                {[...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}].find(item => item.href === pathname)?.label || 'Dashboard'}
              </h1>
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="overflow-hidden rounded-full">
-                <User />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserMenu />
         </header>
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
 }
+    

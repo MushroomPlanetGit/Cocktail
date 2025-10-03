@@ -4,6 +4,8 @@ import {
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  linkWithCredential,
+  AuthCredential,
   // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
 
@@ -27,3 +29,15 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
   signInWithEmailAndPassword(authInstance, email, password);
   // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
+
+
+/** Link anonymous user with credential (non-blocking). */
+export function linkAnonymousUserWithCredential(authInstance: Auth, credential: AuthCredential): void {
+  if (!authInstance.currentUser) {
+    console.error("No user to link.");
+    return;
+  }
+  linkWithCredential(authInstance.currentUser, credential);
+}
+
+    
