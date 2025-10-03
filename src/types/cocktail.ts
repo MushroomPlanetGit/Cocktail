@@ -1,3 +1,4 @@
+
 export interface Cocktail {
     id: string;
     userId: string;
@@ -13,3 +14,16 @@ export interface Cocktail {
     glassware: string;
     fact: string;
 }
+
+export interface RecipeNote {
+  id: string;
+  userId: string;
+  recipeId: string;
+  brands: string;
+  notes: string;
+  sharedWith: string[];
+  photoUrl?: string;
+  updatedAt: any;
+}
+
+    

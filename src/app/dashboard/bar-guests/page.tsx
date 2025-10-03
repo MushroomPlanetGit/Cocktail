@@ -16,18 +16,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import type { Cocktail } from '@/types/cocktail';
 
-const initialSearchState = {
-  users: [],
-  error: null,
-};
-
-type Connection = {
+export type Connection = {
   id: string;
   userIds: string[];
   requesterId: string;
   status: 'pending' | 'accepted';
   createdAt: any;
 };
+
+const initialSearchState = {
+  users: [],
+  error: null,
+};
+
 
 export default function BarGuestsPage() {
   const { toast } = useToast();
@@ -248,3 +249,5 @@ export default function BarGuestsPage() {
     </div>
   );
 }
+
+    

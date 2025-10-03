@@ -1,3 +1,4 @@
+
 export interface UserProfile {
     id: string;
     email?: string;
@@ -6,4 +7,7 @@ export interface UserProfile {
     registrationDate?: string;
     photoURL?: string;
     favoriteCocktail?: string;
+    isAnonymous?: boolean;
 }
+
+    

@@ -1,18 +1,19 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Camera, PlusCircle, Trash2, Upload, Users, Wine, BookHeart, Loader2, RefreshCcw } from 'lucide-react';
+import { Camera, PlusCircle, Trash2, Upload, Users, Wine, BookHeart, Loader2, RefreshCcw, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +27,11 @@ import {
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import type { Cocktail } from '@/types/cocktail';
+import type { Cocktail, RecipeNote } from '@/types/cocktail';
+import type { UserProfile } from '@/types/user';
+import type { Connection } from '@/app/dashboard/bar-guests/page';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 export default function RecipeBookPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
@@ -44,7 +49,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
   // Form state
   const [brands, setBrands] = useState('');
   const [notes, setNotes] = useState('');
-  const [sharedWith, setSharedWith] = useState('');
+  const [sharedWith, setSharedWith] = useState<string[]>([]);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
 
   // Fetch the main cocktail recipe from Firestore
@@ -74,20 +79,39 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
   }, [user, firestore, slug]);
 
   // Use the useDoc hook to fetch data in real-time
-  const { data: recipeNote, isLoading: isLoadingNote } = useDoc<{ brands: string, notes: string, sharedWith: string, photoUrl?: string }>(recipeNoteRef);
+  const { data: recipeNote, isLoading: isLoadingNote } = useDoc<RecipeNote>(recipeNoteRef);
   
+    // --- Guest fetching logic ---
+  const connectionsQuery = useMemoFirebase(() => {
+    if (firestore && user) {
+        return query(collection(firestore, 'connections'), where('userIds', 'array-contains', user.uid), where('status', '==', 'accepted'));
+    }
+    return null;
+  }, [firestore, user]);
+  const { data: connections, isLoading: isLoadingConnections } = useCollection<Connection>(connectionsQuery);
+  const guestIds = useMemo(() => connections?.map(c => c.userIds.find(id => id !== user?.uid)).filter(Boolean) as string[] ?? [], [connections, user]);
+  
+  const guestsQuery = useMemoFirebase(() => {
+    if (firestore && guestIds.length > 0) {
+        return query(collection(firestore, 'users'), where('id', 'in', guestIds));
+    }
+    return null;
+  }, [firestore, guestIds.join(',')]);
+  const { data: guests, isLoading: isLoadingGuests } = useCollection<UserProfile>(guestsQuery);
+
+
   // Populate form fields when data is loaded from Firestore
   useEffect(() => {
     if (recipeNote) {
       setBrands(recipeNote.brands || '');
       setNotes(recipeNote.notes || '');
-      setSharedWith(recipeNote.sharedWith || '');
+      setSharedWith(recipeNote.sharedWith || []);
       setPhotoDataUrl(recipeNote.photoUrl || null);
     } else {
       // If the document is deleted or doesn't exist, clear the form
       setBrands('');
       setNotes('');
-      setSharedWith('');
+      setSharedWith([]);
       setPhotoDataUrl(null);
     }
   }, [recipeNote]);
@@ -105,6 +129,12 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
     notFound();
   }
 
+  const handleShareChange = (guestId: string, isChecked: boolean) => {
+    setSharedWith(prev => 
+      isChecked ? [...prev, guestId] : prev.filter(id => id !== guestId)
+    );
+  };
+
   const handleSave = () => {
     if (!recipeNoteRef) {
       toast({
@@ -115,7 +145,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
       return;
     }
     
-    const noteData = {
+    const noteData: Partial<RecipeNote> = {
       brands,
       notes,
       sharedWith,
@@ -291,16 +321,6 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
                     <Label htmlFor="adjustments">Adjustments & Notes</Label>
                     <Textarea id="adjustments" placeholder="e.g., Used a double shot of espresso, added a pinch of salt..." value={notes} onChange={(e) => setNotes(e.target.value)} />
                   </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="shared-with">Shared With</Label>
-                    <div className="flex items-center gap-2">
-                      <Input id="shared-with" placeholder="e.g., Jane Doe, John Smith" value={sharedWith} onChange={(e) => setSharedWith(e.target.value)} />
-                       <Button variant="outline" size="icon">
-                        <Users className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
                 </div>
                 
                 <div className="flex flex-col gap-4">
@@ -348,16 +368,35 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
 
               <Separator />
 
-              <div >
-                 <h3 className="text-lg font-semibold mb-4">Cocktail Party Photos</h3>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {/* Placeholder for party photos */}
-                    <div className="aspect-square rounded-md bg-muted flex items-center justify-center border-2 border-dashed">
-                        <Button variant="ghost" size="icon">
-                            <PlusCircle className="w-8 h-8 text-muted-foreground" />
-                        </Button>
+                <div>
+                 <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                    <Users className="w-5 h-5" />
+                    Share with Guests
+                 </h3>
+                 {isLoadingGuests ? (
+                     <p className="text-muted-foreground">Loading guests...</p>
+                 ) : guests && guests.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {guests.map(guest => (
+                            <div key={guest.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
+                                <Checkbox 
+                                    id={`share-${guest.id}`} 
+                                    checked={sharedWith.includes(guest.id)}
+                                    onCheckedChange={(checked) => handleShareChange(guest.id, !!checked)}
+                                />
+                                <Label htmlFor={`share-${guest.id}`} className="flex items-center gap-2 font-normal cursor-pointer">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={guest.photoURL} />
+                                        <AvatarFallback>{guest.email?.[0].toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    {guest.email}
+                                </Label>
+                            </div>
+                        ))}
                     </div>
-                 </div>
+                 ) : (
+                    <p className="text-sm text-muted-foreground">You have no guests to share with yet. Add some from the 'Bar Guests' page.</p>
+                 )}
               </div>
             </>
           )}
@@ -389,3 +428,5 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
     </div>
   );
 }
+
+    
