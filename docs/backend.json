@@ -155,6 +155,54 @@
         "suggestedContent",
         "timestamp"
       ]
+    },
+    "RecipeNote": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RecipeNote",
+      "type": "object",
+      "description": "Represents a user's personal notes for a specific recipe.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the note, typically the recipe ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this note."
+        },
+        "recipeId": {
+          "type": "string",
+          "description": "The ID of the cocktail recipe these notes are for."
+        },
+        "brands": {
+          "type": "string",
+          "description": "User's preferred spirit brands for this recipe."
+        },
+        "notes": {
+          "type": "string",
+          "description": "User's personal adjustments and notes."
+        },
+        "sharedWith": {
+          "type": "string",
+          "description": "People the user has shared this cocktail with."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL of the user's personal photo for this cocktail.",
+          "format": "uri"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The timestamp when the note was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "recipeId",
+        "updatedAt"
+      ]
     }
   },
   "auth": {
@@ -240,8 +288,28 @@
             }
           ]
         }
+      },
+       {
+        "path": "/users/{userId}/recipeNotes/{recipeNoteId}",
+        "definition": {
+          "entityName": "RecipeNote",
+          "schema": {
+            "$ref": "#/backend/entities/RecipeNote"
+          },
+          "description": "Stores a user's personal notes for a specific recipe. Only the owning user can access their notes.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's unique ID."
+            },
+            {
+              "name": "recipeNoteId",
+              "description": "The unique ID for the recipe note, often matching the recipe slug."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging, adhering to the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. Authorization Independence is achieved through denormalization, specifically by including the 'userId' within the Project and ContentSuggestion documents, avoiding hierarchical `get()` calls in security rules.  Structural Segregation separates user-owned data into dedicated collections, ensuring a homogeneous security posture. Access Modeling follows consistent patterns: Private Data uses Path-Based ownership (`/users/{userId}/projects/{projectId}`), and the structure supports required QAPs. Specifically:\n\n*   **Templates:** Public and queryable.  No personalized data is present. Can be listed safely.\n*   **User Data:** All user data is stored within the `/users/{userId}` path, ensuring only the authenticated user can access their data.\n*   **Projects:**  Stored under the user's path, ensuring only the owning user can access them.  Includes the `userId` property for redundant security.\n*   **ContentSuggestions:**  Stored under the user's project, ensuring only the owning user can access them.  Includes the `projectId` for redundant security.\n\nThe explicit state modeling uses timestamps. The schema is predictable with static keys.  Naming conventions are consistently applied (e.g., `userId`, `projectId`).\n\nThis approach allows for secure list operations and atomic operations while maintaining data integrity and a clear authorization model."
+    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging, adhering to the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. Authorization Independence is achieved through denormalization, specifically by including the 'userId' within the Project and ContentSuggestion documents, avoiding hierarchical `get()` calls in security rules.  Structural Segregation separates user-owned data into dedicated collections, ensuring a homogeneous security posture. Access Modeling follows consistent patterns: Private Data uses Path-Based ownership (`/users/{userId}/projects/{projectId}` and `/users/{userId}/recipeNotes/{recipeNoteId}`), and the structure supports required QAPs. Specifically:\n\n*   **Templates:** Public and queryable.  No personalized data is present. Can be listed safely.\n*   **User Data:** All user data is stored within the `/users/{userId}` path, ensuring only the authenticated user can access their data.\n*   **Projects:**  Stored under the user's path, ensuring only the owning user can access them.  Includes the `userId` property for redundant security.\n*   **ContentSuggestions:**  Stored under the user's project, ensuring only the owning user can access them.  Includes the `projectId` for redundant security.\n*   **RecipeNotes:** Stored under the user's path, ensuring only the owning user can access them. The `recipeNoteId` will often be the slug of the recipe for easy lookup.\n\nThe explicit state modeling uses timestamps. The schema is predictable with static keys.  Naming conventions are consistently applied (e.g., `userId`, `projectId`).\n\nThis approach allows for secure list operations and atomic operations while maintaining data integrity and a clear authorization model."
   }
 }
