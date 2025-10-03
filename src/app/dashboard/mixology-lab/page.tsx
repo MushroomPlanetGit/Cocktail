@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle, Layers, Check, Repeat, Loader2 } from 'lucide-react';
+import { FlaskConical, ChevronRight, CheckCircle, XCircle, Lightbulb, Puzzle, HelpCircle, Layers, Check, Repeat, Loader2, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { generateQuizQuestionAction, generateWhatAmIPuzzleAction } from './actions';
+import { generateQuizQuestionAction, generateWhatAmIPuzzleAction, generateCrosswordAction } from './actions';
 import type { GenerateQuizQuestionOutput } from '@/ai/flows/generate-quiz-question';
 import type { GenerateWhatAmIPuzzleOutput } from '@/ai/flows/generate-what-am-i-puzzle';
+import type { CrosswordClues, GenerateCrosswordOutput } from '@/ai/flows/generate-crossword';
 import { useToast } from '@/hooks/use-toast';
 import { cocktails, type Cocktail } from '@/lib/recipes';
 
@@ -22,37 +23,6 @@ import { cocktails, type Cocktail } from '@/lib/recipes';
 function shuffleArray<T>(array: T[]): T[] {
   return [...array].sort(() => Math.random() - 0.5);
 }
-
-const crosswordLayout = [
-  ['M', 'O', 'J', 'I', 'T', 'O', 'X', 'R', 'X', 'G'],
-  ['A', 'X', 'U', 'X', 'E', 'X', 'X', 'U', 'X', 'I'],
-  ['R', 'X', 'L', 'I', 'M', 'E', 'X', 'M', 'X', 'N'],
-  ['T', 'X', 'I', 'X', 'P', 'X', 'X', 'X', 'X', 'X'],
-  ['I', 'V', 'O', 'D', 'K', 'A', 'S', 'A', 'L', 'T'],
-  ['N', 'X', 'C', 'X', 'E', 'X', 'Y', 'X', 'X', 'X'],
-  ['I', 'T', 'E', 'Q', 'U', 'I', 'L', 'A', 'X', 'X'],
-  ['X', 'X', 'A', 'X', 'L', 'X', 'U', 'X', 'X', 'X'],
-  ['X', 'S', 'Y', 'R', 'U', 'P', 'B', 'I', 'T', 'T', 'E', 'R', 'S'],
-  ['X', 'X', 'E', 'X', 'S', 'X', 'X', 'X', 'X', 'X'],
-];
-
-const crosswordClues = {
-    across: [
-        { num: 1, clue: "Classic Cuban highball with mint and lime", row: 0, col: 0, answer: "MOJITO" },
-        { num: 4, clue: "Zesty citrus fruit in a Margarita", row: 2, col: 3, answer: "LIME" },
-        { num: 5, clue: "Spirit often distilled from grain or potatoes", row: 4, col: 1, answer: "VODKA" },
-        { num: 6, clue: "Used to rim a Margarita glass", row: 4, col: 6, answer: "SALT" },
-        { num: 7, clue: "Spirit made from the blue agave plant", row: 6, col: 1, answer: "TEQUILA" },
-        { num: 8, clue: "Sweetener used in many cocktails", row: 8, col: 1, answer: "SYRUP" },
-        { num: 9, clue: "Aromatic ingredient, essential for an Old Fashioned", row: 8, col: 6, answer: "BITTERS" },
-    ],
-    down: [
-        { num: 1, clue: "Base spirit of a classic Martini", row: 0, col: 0, answer: "MARTINI"},
-        { num: 2, clue: "Base spirit of a Daiquiri", row: 0, col: 7, answer: "RUM" },
-        { num: 3, clue: "Botanical spirit from London", row: 0, col: 9, answer: "GIN" },
-    ]
-};
-
 
 export default function MixologyLabPage() {
   const [category, setCategory] = useState('random');
@@ -77,21 +47,46 @@ export default function MixologyLabPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const currentFlashcard: Cocktail = useMemo(() => cocktails[flashcardIndex], [flashcardIndex]);
   
-  const [grid, setGrid] = useState<string[][]>(Array(10).fill(null).map(() => Array(13).fill('')));
+  // Crossword state
+  const [crossword, setCrossword] = useState<GenerateCrosswordOutput | null>(null);
+  const [crosswordGrid, setCrosswordGrid] = useState<string[][]>([]);
+  const [isCrosswordLoading, setIsCrosswordLoading] = useState(true);
 
-  const handleInputChange = (row: number, col: number, value: string) => {
-    const newGrid = grid.map(r => [...r]);
+  const fetchCrossword = () => {
+    setIsCrosswordLoading(true);
+    startTransition(() => {
+        generateCrosswordAction().then(result => {
+            if (result.error || !result.crossword) {
+                toast({
+                    title: 'Error Generating Crossword',
+                    description: result.error || 'Could not fetch a new puzzle.',
+                    variant: 'destructive',
+                });
+            } else {
+                setCrossword(result.crossword);
+                setCrosswordGrid(Array(result.crossword.rows).fill(null).map(() => Array(result.crossword.cols).fill('')));
+            }
+            setIsCrosswordLoading(false);
+        });
+    });
+  };
+  
+  useEffect(() => {
+    fetchCrossword();
+  }, []);
+
+  const handleCrosswordInputChange = (row: number, col: number, value: string) => {
+    const newGrid = crosswordGrid.map(r => [...r]);
     newGrid[row][col] = value.toUpperCase();
-    setGrid(newGrid);
+    setCrosswordGrid(newGrid);
 
-    if (value && col < 12) {
+    if (value && col < (crossword?.cols ?? 10) - 1) {
       const nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`) as HTMLInputElement;
-      if (nextInput && crosswordLayout[row][col+1] !== 'X') {
+      if (nextInput && crossword?.layout[row][col+1] !== 'X') {
         nextInput.focus();
       }
     }
   };
-
 
   // Memoize the shuffled answers so they don't re-shuffle on every render
   const shuffledAnswers = useMemo(() => {
@@ -182,22 +177,23 @@ export default function MixologyLabPage() {
   }
 
   const checkCrossword = () => {
-    let correct = true;
-    for (let i = 0; i < 10; i++) {
-        for (let j = 0; j < 13; j++) {
-            if (crosswordLayout[i][j] !== 'X' && grid[i][j] !== crosswordLayout[i][j]) {
-                correct = false;
-                break;
-            }
-        }
-        if(!correct) break;
-    }
+      if (!crossword) return;
+      let correct = true;
+      for (let i = 0; i < crossword.rows; i++) {
+          for (let j = 0; j < crossword.cols; j++) {
+              if (crossword.layout[i][j] !== 'X' && crosswordGrid[i][j] !== crossword.layout[i][j]) {
+                  correct = false;
+                  break;
+              }
+          }
+          if(!correct) break;
+      }
 
-    toast({
-        title: correct ? 'Congratulations!' : 'Not Quite!',
-        description: correct ? 'You solved the puzzle!' : 'Some of your answers are incorrect. Keep trying!',
-        variant: correct ? 'default' : 'destructive'
-    })
+      toast({
+          title: correct ? 'Congratulations!' : 'Not Quite!',
+          description: correct ? 'You solved the puzzle!' : 'Some answers are incorrect. Keep trying!',
+          variant: correct ? 'default' : 'destructive'
+      });
   }
 
 
@@ -357,53 +353,70 @@ export default function MixologyLabPage() {
             </div>
           </TabsContent>
           <TabsContent value="crosswords" className="pt-6">
-            <div className="flex flex-col lg:flex-row gap-8">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-4">Cocktail Crossword #1</h3>
-                <div className="grid grid-cols-13 gap-px bg-foreground max-w-md aspect-square border">
-                  {crosswordLayout.map((row, rowIndex) => (
-                    row.map((cell, colIndex) => {
-                      if (cell === 'X') {
-                        return <div key={`${rowIndex}-${colIndex}`} className="bg-foreground" />;
-                      }
-                      
-                      const clueData = [...crosswordClues.across, ...crosswordClues.down];
-                      const clueNumber = clueData.find(c => c.row === rowIndex && c.col === colIndex)?.num;
+            {isCrosswordLoading ? (
+                 <div className="flex flex-col items-center justify-center p-8 min-h-[400px]">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <CardTitle className="mt-4">Generating Crossword</CardTitle>
+                    <CardDescription>Our AI is building a new puzzle for you...</CardDescription>
+                </div>
+            ) : crossword && (
+                <div className="flex flex-col lg:flex-row gap-8">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">AI-Generated Crossword</h3>
+                        <Button variant="outline" size="sm" onClick={fetchCrossword} disabled={isCrosswordLoading || isPending}>
+                            <Repeat className="mr-2 h-4 w-4" />
+                            New Puzzle
+                        </Button>
+                    </div>
+                    <div 
+                        className="grid gap-px bg-foreground max-w-md aspect-square border"
+                        style={{ gridTemplateColumns: `repeat(${crossword.cols}, minmax(0, 1fr))` }}
+                    >
+                      {crossword.layout.map((row, rowIndex) => (
+                        row.map((cell, colIndex) => {
+                          if (cell === 'X') {
+                            return <div key={`${rowIndex}-${colIndex}`} className="bg-foreground" />;
+                          }
+                          
+                          const allClues: CrosswordClues[] = [...crossword.clues.across, ...crossword.clues.down];
+                          const clueNumber = allClues.find(c => c.row === rowIndex && c.col === colIndex)?.num;
 
-                      return (
-                        <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
-                          {clueNumber && <span className="absolute top-0 left-0.5 text-[10px] text-muted-foreground">{clueNumber}</span>}
-                           <Input
-                            type="text"
-                            maxLength={1}
-                            data-row={rowIndex}
-                            data-col={colIndex}
-                            value={grid[rowIndex]?.[colIndex] || ''}
-                            onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
-                            className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase"
-                          />
-                        </div>
-                      );
-                    })
-                  )).flat()}
+                          return (
+                            <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
+                              {clueNumber && <span className="absolute top-0 left-0.5 text-[10px] text-muted-foreground">{clueNumber}</span>}
+                               <Input
+                                type="text"
+                                maxLength={1}
+                                data-row={rowIndex}
+                                data-col={colIndex}
+                                value={crosswordGrid[rowIndex]?.[colIndex] || ''}
+                                onChange={(e) => handleCrosswordInputChange(rowIndex, colIndex, e.target.value)}
+                                className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase"
+                              />
+                            </div>
+                          );
+                        })
+                      )).flat()}
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-80">
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-primary mb-2">Across</h4>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                         {crossword.clues.across.map(c => <li key={`across-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-primary mb-2">Down</h4>
+                       <ul className="space-y-2 text-sm text-muted-foreground">
+                        {crossword.clues.down.map(c => <li key={`down-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
+                      </ul>
+                    </div>
+                    <Button className="w-full mt-6" onClick={checkCrossword}>Check Puzzle</Button>
+                  </div>
                 </div>
-              </div>
-              <div className="w-full lg:w-80">
-                <div className="mb-6">
-                  <h4 className="font-semibold text-primary mb-2">Across</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                     {crosswordClues.across.map(c => <li key={`across-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-primary mb-2">Down</h4>
-                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    {crosswordClues.down.map(c => <li key={`down-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
-                  </ul>
-                </div>
-                <Button className="w-full mt-6" onClick={checkCrossword}>Check Puzzle</Button>
-              </div>
-            </div>
+            )}
           </TabsContent>
           <TabsContent value="what-am-i" className="pt-6">
              <div className="max-w-md mx-auto">
@@ -491,3 +504,5 @@ export default function MixologyLabPage() {
     </Card>
   );
 }
+
+    

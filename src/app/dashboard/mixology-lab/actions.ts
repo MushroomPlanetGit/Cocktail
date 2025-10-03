@@ -10,6 +10,10 @@ import {
   generateWhatAmIPuzzle,
   GenerateWhatAmIPuzzleOutput,
 } from '@/ai/flows/generate-what-am-i-puzzle';
+import {
+    generateCrossword,
+    GenerateCrosswordOutput,
+} from '@/ai/flows/generate-crossword';
 import { z } from 'zod';
 
 const quizActionSchema = z.object({
@@ -57,3 +61,21 @@ export async function generateWhatAmIPuzzleAction(): Promise<{ puzzle: GenerateW
     };
   }
 }
+
+export async function generateCrosswordAction(): Promise<{ crossword: GenerateCrosswordOutput | null; error: string | null; }> {
+    try {
+        const crossword = await generateCrossword();
+        return {
+            crossword,
+            error: null,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            crossword: null,
+            error: 'An unexpected error occurred while generating the crossword puzzle.',
+        };
+    }
+}
+
+    
