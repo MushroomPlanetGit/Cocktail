@@ -1,6 +1,7 @@
 
 export interface Cocktail {
   id: number;
+  slug: string;
   name: string;
   description: string;
   baseSpirit: 'vodka' | 'gin' | 'rum' | 'tequila' | 'whiskey';
@@ -16,6 +17,7 @@ export interface Cocktail {
 export const cocktails: Cocktail[] = [
   {
     id: 1,
+    slug: "espresso-martini",
     name: "Espresso Martini",
     description: "A bold and energizing coffee-flavored cocktail.",
     baseSpirit: 'vodka',
@@ -37,6 +39,7 @@ export const cocktails: Cocktail[] = [
   },
   {
     id: 2,
+    slug: "classic-margarita",
     name: "Classic Margarita",
     description: "A refreshing tequila-based cocktail with a citrus kick.",
     baseSpirit: 'tequila',
@@ -58,6 +61,7 @@ export const cocktails: Cocktail[] = [
   },
   {
     id: 3,
+    slug: "mojito",
     name: "Mojito",
     description: "A classic Cuban highball with mint and lime.",
     baseSpirit: 'rum',
@@ -80,6 +84,7 @@ export const cocktails: Cocktail[] = [
   },
   {
     id: 4,
+    slug: "old-fashioned",
     name: "Old Fashioned",
     description: "The quintessential whiskey cocktail, timeless and strong.",
     baseSpirit: 'whiskey',
@@ -99,6 +104,7 @@ export const cocktails: Cocktail[] = [
   },
   {
     id: 5,
+    slug: "daiquiri",
     name: "Daiquiri",
     description: "A simple and sublime blend of rum, lime, and sugar.",
     baseSpirit: 'rum',
@@ -116,6 +122,7 @@ export const cocktails: Cocktail[] = [
   },
   {
     id: 6,
+    slug: "gin-and-tonic",
     name: "Gin and Tonic",
     description: "A crisp and refreshing highball, perfect for any occasion.",
     baseSpirit: 'gin',
@@ -133,6 +140,7 @@ export const cocktails: Cocktail[] = [
   },
   {
     id: 7,
+    slug: "jungle-bird",
     name: "Jungle Bird",
     description: "A tropical rum cocktail with a bitter twist.",
     baseSpirit: 'rum',

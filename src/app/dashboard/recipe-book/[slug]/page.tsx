@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -24,10 +25,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
+import { cocktails } from '@/lib/recipes';
+import { notFound } from 'next/navigation';
 
-const RECIPE_ID = 'espresso-martini'; // Hardcoded for this example page
+export default function RecipeBookPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
+  const recipe = cocktails.find(c => c.slug === slug);
 
-export default function RecipeBookPage() {
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -42,14 +46,13 @@ export default function RecipeBookPage() {
   const [sharedWith, setSharedWith] = useState('');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
 
-
   // Create a memoized reference to the user's recipe note document
   const recipeNoteRef = useMemoFirebase(() => {
-    if (user && firestore) {
-      return doc(firestore, 'users', user.uid, 'recipeNotes', RECIPE_ID);
+    if (user && firestore && slug) {
+      return doc(firestore, 'users', user.uid, 'recipeNotes', slug);
     }
     return null;
-  }, [user, firestore]);
+  }, [user, firestore, slug]);
 
   // Use the useDoc hook to fetch data in real-time
   const { data: recipeNote, isLoading } = useDoc<{ brands: string, notes: string, sharedWith: string, photoUrl?: string }>(recipeNoteRef);
@@ -70,6 +73,10 @@ export default function RecipeBookPage() {
     }
   }, [recipeNote]);
 
+  if (!recipe) {
+    notFound();
+  }
+
   const handleSave = () => {
     if (!recipeNoteRef) {
       toast({
@@ -84,7 +91,7 @@ export default function RecipeBookPage() {
       brands,
       notes,
       sharedWith,
-      recipeId: RECIPE_ID, // Store the recipe ID for context
+      recipeId: slug, // Store the recipe ID for context
       photoUrl: photoDataUrl,
     };
 
@@ -92,7 +99,7 @@ export default function RecipeBookPage() {
 
     toast({
       title: 'Notes Saved!',
-      description: 'Your notes for Espresso Martini have been saved.',
+      description: `Your notes for ${recipe.name} have been saved.`,
     });
   };
   
@@ -202,7 +209,7 @@ export default function RecipeBookPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle>Espresso Martini</CardTitle>
+          <CardTitle>{recipe.name}</CardTitle>
           <CardDescription>Your personal notes and photos for this cocktail.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-8">
@@ -216,16 +223,13 @@ export default function RecipeBookPage() {
                 <div>
                     <p className="font-medium">Ingredients:</p>
                     <ul className="list-disc pl-5 text-muted-foreground">
-                        <li>2 oz Vodka</li>
-                        <li>1 oz Coffee Liqueur</li>
-                        <li>1 oz Espresso</li>
-                        <li>Coffee beans for garnish</li>
+                        {recipe.ingredients.map(ing => <li key={ing}>{ing}</li>)}
                     </ul>
                 </div>
                 <div>
                     <p className="font-medium">Instructions:</p>
                     <p className="text-muted-foreground">
-                        Shake all ingredients with ice, strain into a chilled cocktail glass. Garnish with coffee beans.
+                        {recipe.directions}
                     </p>
                 </div>
             </div>
@@ -342,7 +346,7 @@ export default function RecipeBookPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete your notes and photos for the Espresso Martini.
+                  This action cannot be undone. This will permanently delete your notes and photos for the {recipe.name}.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -357,5 +361,3 @@ export default function RecipeBookPage() {
     </div>
   );
 }
-
-    

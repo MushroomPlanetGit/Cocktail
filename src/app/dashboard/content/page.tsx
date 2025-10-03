@@ -141,7 +141,7 @@ export default function ContentPage() {
                     </div>
                      <div className="mt-6 flex justify-end">
                         <Button variant="ghost" size="sm" asChild>
-                          <Link href="/dashboard/recipe-book">
+                          <Link href={`/dashboard/recipe-book/${cocktail.slug}`}>
                             <BookPlus className="mr-2 h-4 w-4" />
                             Add to My Recipe Book
                           </Link>
