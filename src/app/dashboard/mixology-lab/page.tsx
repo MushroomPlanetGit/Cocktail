@@ -16,9 +16,11 @@ import type { GenerateQuizQuestionOutput } from '@/ai/flows/generate-quiz-questi
 import type { GenerateWhatAmIPuzzleOutput } from '@/ai/flows/generate-what-am-i-puzzle';
 import type { CrosswordClues, GenerateCrosswordOutput } from '@/ai/flows/generate-crossword';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, doc, increment, writeBatch } from 'firebase/firestore';
 import type { Cocktail } from '@/types/cocktail';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { UserLearning } from '@/types/learning';
 
 
 // Helper function to shuffle an array
@@ -56,7 +58,9 @@ export default function MixologyLabPage() {
   const [crosswordCategory, setCrosswordCategory] = useState('random');
   const [crosswordDifficulty, setCrosswordDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
 
+  const { user } = useUser();
   const firestore = useFirestore();
+
   const cocktailsCollectionRef = useMemoFirebase(() => {
     if (firestore) {
       return collection(firestore, 'cocktails');
@@ -64,6 +68,14 @@ export default function MixologyLabPage() {
     return null;
   }, [firestore]);
   const { data: cocktails, isLoading: isLoadingCocktails } = useCollection<Cocktail>(cocktailsCollectionRef);
+
+  const learningProgressRef = useMemoFirebase(() => {
+    if (user && firestore) {
+      return doc(firestore, 'users', user.uid, 'learning', 'progress');
+    }
+    return null;
+  }, [user, firestore]);
+  const { data: learningProgress } = useDoc<UserLearning>(learningProgressRef);
 
   const currentFlashcard: Cocktail | undefined = useMemo(() => cocktails?.[flashcardIndex], [cocktails, flashcardIndex]);
 
@@ -138,10 +150,18 @@ export default function MixologyLabPage() {
   }, []);
 
   const handleGuessSubmit = () => {
-    if (!puzzle || !guess) return;
+    if (!puzzle || !guess || !user || !learningProgressRef) return;
     const isCorrect = guess.trim().toLowerCase() === puzzle.answer.toLowerCase();
     setIsGuessCorrect(isCorrect);
     setShowPuzzleResult(true);
+
+    if (isCorrect) {
+      const currentPuzzlesSolved = learningProgress?.puzzlesSolved || 0;
+      setDocumentNonBlocking(learningProgressRef, { 
+        puzzlesSolved: currentPuzzlesSolved + 1,
+        userId: user.uid,
+       }, { merge: true });
+    }
   };
 
 
@@ -174,12 +194,19 @@ export default function MixologyLabPage() {
   };
 
   const checkAnswer = () => {
-    if (selectedAnswer !== null) {
+    if (selectedAnswer !== null && user && learningProgressRef) {
       setShowFeedback(true);
-      if(!isCorrect) {
-          // Here is where we would add logic to track the incorrectly answered question
-          console.log(`Question "${question?.question}" answered incorrectly. Add to review queue.`);
+      const currentTotal = learningProgress?.totalQuizzesTaken || 0;
+      const currentCorrect = learningProgress?.correctQuizAnswers || 0;
+
+      const dataToUpdate: Partial<UserLearning> & { userId: string } = {
+        totalQuizzesTaken: currentTotal + 1,
+        userId: user.uid,
+      };
+      if(isCorrect) {
+        dataToUpdate.correctQuizAnswers = currentCorrect + 1;
       }
+      setDocumentNonBlocking(learningProgressRef, dataToUpdate, { merge: true });
     }
   }
 
@@ -367,7 +394,7 @@ export default function MixologyLabPage() {
               </div>
             </div>
             <div className="flex justify-end mt-6">
-              <Button onClick={startQuiz} disabled={isPending}>
+              <Button onClick={startQuiz} disabled={isPending || !user}>
                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Start Quiz"}
                 {!isPending && <ChevronRight className="ml-2 h-4 w-4" />}
               </Button>
@@ -500,9 +527,9 @@ export default function MixologyLabPage() {
                     value={guess}
                     onChange={(e) => setGuess(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleGuessSubmit()}
-                    disabled={showPuzzleResult}
+                    disabled={showPuzzleResult || !user}
                   />
-                  <Button onClick={handleGuessSubmit} disabled={showPuzzleResult || !guess}>Submit Guess</Button>
+                  <Button onClick={handleGuessSubmit} disabled={showPuzzleResult || !guess || !user}>Submit Guess</Button>
                 </div>
 
                 {showPuzzleResult && (
@@ -576,3 +603,5 @@ export default function MixologyLabPage() {
     </Card>
   );
 }
+
+    

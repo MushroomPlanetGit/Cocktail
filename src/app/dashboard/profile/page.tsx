@@ -16,6 +16,7 @@ import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/types/user';
 import type { Cocktail } from '@/types/cocktail';
+import type { UserLearning } from '@/types/learning';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -33,8 +34,15 @@ export default function ProfilePage() {
     }
     return null;
   }, [user, firestore]);
-
   const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileRef);
+  
+  const learningProgressRef = useMemoFirebase(() => {
+    if (user && firestore) {
+      return doc(firestore, 'users', user.uid, 'learning', 'progress');
+    }
+    return null;
+  }, [user, firestore]);
+  const { data: learningProgress, isLoading: isLoadingLearning } = useDoc<UserLearning>(learningProgressRef);
 
   const cocktailsCollectionRef = useMemoFirebase(() => {
       if (firestore) {
@@ -42,8 +50,23 @@ export default function ProfilePage() {
       }
       return null;
     }, [firestore]);
-
   const { data: cocktails, isLoading: isLoadingCocktails } = useCollection<Cocktail>(cocktailsCollectionRef);
+
+  // Effect for milestone toasts
+  useEffect(() => {
+    if (learningProgress) {
+      if (learningProgress.correctQuizAnswers === 1 && learningProgress.totalQuizzesTaken === 1) {
+        toast({ title: 'First Correct Answer!', description: 'Great start! Keep that momentum going.' });
+      }
+      if (learningProgress.puzzlesSolved === 1) {
+        toast({ title: 'Puzzle Master!', description: 'You solved your first "What Am I?" puzzle!' });
+      }
+      if (learningProgress.totalQuizzesTaken === 10) {
+        toast({ title: 'Knowledge Seeker', description: 'You\'ve answered 10 quiz questions! Your journey has begun.' });
+      }
+    }
+  }, [learningProgress, toast]);
+
 
   useEffect(() => {
     if (userProfile) {
@@ -118,6 +141,9 @@ export default function ProfilePage() {
   };
   
   const isLoading = isUserLoading || isLoadingProfile;
+  const accuracy = learningProgress && learningProgress.totalQuizzesTaken > 0
+    ? Math.round((learningProgress.correctQuizAnswers / learningProgress.totalQuizzesTaken) * 100)
+    : 0;
 
   return (
     <div className="grid gap-6">
@@ -184,32 +210,41 @@ export default function ProfilePage() {
           <CardTitle>Quiz Performance</CardTitle>
           <CardDescription>Track your mixology knowledge progress.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
-            <div className="p-4 rounded-lg bg-muted/50">
-              <Target className="h-8 w-8 text-primary mx-auto" />
-              <p className="text-2xl font-bold mt-2">82%</p>
-              <p className="text-sm text-muted-foreground">Overall Accuracy</p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50">
-              <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
-              <p className="text-2xl font-bold mt-2">125</p>
-              <p className="text-sm text-muted-foreground">Correct Answers</p>
-            </div>
-             <div className="p-4 rounded-lg bg-muted/50">
-              <HelpCircle className="h-8 w-8 text-yellow-500 mx-auto" />
-              <p className="text-2xl font-bold mt-2">152</p>
-              <p className="text-sm text-muted-foreground">Total Questions</p>
-            </div>
-          </div>
-          <div>
-            <Label>Weakest Category: <span className="font-normal text-muted-foreground">Cocktail History</span></Label>
-            <Progress value={45} className="mt-2" />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button variant="outline">Review Missed Questions</Button>
-        </CardFooter>
+        {isLoadingLearning ? (
+          <CardContent className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-4 text-muted-foreground">Loading your stats...</p>
+          </CardContent>
+        ) : (
+          <>
+            <CardContent className="grid gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <Target className="h-8 w-8 text-primary mx-auto" />
+                  <p className="text-2xl font-bold mt-2">{accuracy}%</p>
+                  <p className="text-sm text-muted-foreground">Overall Accuracy</p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
+                  <p className="text-2xl font-bold mt-2">{learningProgress?.correctQuizAnswers || 0}</p>
+                  <p className="text-sm text-muted-foreground">Correct Answers</p>
+                </div>
+                 <div className="p-4 rounded-lg bg-muted/50">
+                  <HelpCircle className="h-8 w-8 text-yellow-500 mx-auto" />
+                  <p className="text-2xl font-bold mt-2">{learningProgress?.totalQuizzesTaken || 0}</p>
+                  <p className="text-sm text-muted-foreground">Total Questions</p>
+                </div>
+              </div>
+              <div>
+                <Label>Overall Progress</Label>
+                <Progress value={accuracy} className="mt-2" />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" disabled>Review Missed Questions</Button>
+            </CardFooter>
+          </>
+        )}
       </Card>
       
       <Card>
@@ -293,3 +328,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
