@@ -12,57 +12,61 @@ import Link from 'next/link';
 import { suggestCocktailsAction } from './actions';
 import type { CocktailSuggestion } from '@/ai/flows/suggest-cocktails';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc } from 'firebase/firestore';
+import type { UserInventoryItem } from '@/types/inventory';
+import { Skeleton } from '@/components/ui/skeleton';
 
-
-interface Ingredient {
-  id: number;
-  name: string;
-  level: number;
-  size: string;
-}
-
-const initialIngredients: Ingredient[] = [
-  { id: 1, name: 'Vodka', level: 80, size: '750ml' },
-  { id: 2, name: 'Gin', level: 50, size: '1L' },
-  { id: 3, name: 'Triple Sec', level: 100, size: '750ml' },
-  { id: 4, name: 'Lime Juice', level: 25, size: 'N/A' },
-  { id: 5, name: 'Coffee Liqueur', level: 90, size: '750ml' },
-  { id: 6, name: 'Espresso', level: 100, size: 'N/A' },
-];
 
 export default function MyBarPage() {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newIngredientSize, setNewIngredientSize] = useState('750ml');
   const [suggestions, setSuggestions] = useState<CocktailSuggestion[]>([]);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const inventoryCollectionRef = useMemoFirebase(() => {
+    if (user && firestore) {
+      return collection(firestore, 'users', user.uid, 'inventory');
+    }
+    return null;
+  }, [user, firestore]);
+
+  const { data: ingredients, isLoading: isLoadingInventory } = useCollection<UserInventoryItem>(inventoryCollectionRef);
 
   const addIngredient = () => {
-    if (newIngredientName.trim() !== '') {
-      const newIngredient: Ingredient = {
-        id: Date.now(),
+    if (newIngredientName.trim() !== '' && inventoryCollectionRef) {
+      const newIngredient = {
         name: newIngredientName.trim(),
         level: 100,
         size: newIngredientSize,
       };
-      setIngredients([...ingredients, newIngredient]);
+      addDocumentNonBlocking(inventoryCollectionRef, newIngredient);
       setNewIngredientName('');
     }
   };
 
-  const removeIngredient = (id: number) => {
-    setIngredients(ingredients.filter(ingredient => ingredient.id !== id));
+  const removeIngredient = (id: string) => {
+    if (user && firestore) {
+      const docRef = doc(firestore, 'users', user.uid, 'inventory', id);
+      deleteDocumentNonBlocking(docRef);
+    }
   };
   
-  const updateIngredientLevel = (id: number, level: number[]) => {
-     setIngredients(ingredients.map(ing => ing.id === id ? { ...ing, level: level[0] } : ing));
+  const updateIngredientLevel = (id: string, level: number) => {
+     if (user && firestore) {
+      const docRef = doc(firestore, 'users', user.uid, 'inventory', id);
+      setDocumentNonBlocking(docRef, { level }, { merge: true });
+     }
   }
 
   const handleSuggestCocktails = () => {
     startTransition(async () => {
       setSuggestions([]); // Clear previous suggestions
-      const ingredientNames = ingredients.map(i => i.name);
+      const ingredientNames = ingredients?.map(i => i.name) || [];
       const result = await suggestCocktailsAction({ ingredients: ingredientNames });
 
       if (result.error || !result.suggestions) {
@@ -101,6 +105,7 @@ export default function MyBarPage() {
                         value={newIngredientName}
                         onChange={(e) => setNewIngredientName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && addIngredient()}
+                        disabled={!user}
                       />
                        <Button variant="outline" size="icon" className="shrink-0">
                           <Bot className="h-5 w-5"/>
@@ -115,17 +120,18 @@ export default function MyBarPage() {
                  <div className="flex flex-col gap-2">
                     <label htmlFor="bottle-size" className="text-sm font-medium">Bottle Size</label>
                     <div className="flex items-end gap-2">
-                      <Select value={newIngredientSize} onValueChange={setNewIngredientSize}>
+                      <Select value={newIngredientSize} onValueChange={setNewIngredientSize} disabled={!user}>
                         <SelectTrigger id="bottle-size">
                           <SelectValue placeholder="Select size" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="750ml">750ml</SelectItem>
                           <SelectItem value="1L">1L</SelectItem>
-                          <SelectItem value="1.75L">1.75L</                           <SelectItem value="N/A">N/A</SelectItem>
+                          <SelectItem value="1.75L">1.75L</SelectItem>
+                          <SelectItem value="N/A">N/A</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button onClick={addIngredient} className="shrink-0">
+                      <Button onClick={addIngredient} className="shrink-0" disabled={!user}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add
                       </Button>
@@ -136,7 +142,22 @@ export default function MyBarPage() {
 
             <div className="grid gap-4">
               <h3 className="text-xl font-semibold">Your Inventory</h3>
-              {ingredients.length > 0 ? (
+              {isLoadingInventory ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-8 w-8" />
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-3 w-16 mb-4" />
+                        <Skeleton className="h-5 w-full" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : ingredients && ingredients.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {ingredients.map((ingredient) => (
                     <Card key={ingredient.id}>
@@ -158,7 +179,7 @@ export default function MyBarPage() {
                                     defaultValue={[ingredient.level]}
                                     max={100}
                                     step={1}
-                                    onValueChange={(value) => updateIngredientLevel(ingredient.id, value)}
+                                    onValueChange={(value) => updateIngredientLevel(ingredient.id, value[0])}
                                 />
                                 <div className="flex justify-between text-xs text-muted-foreground">
                                     <span>Empty</span>
@@ -170,14 +191,16 @@ export default function MyBarPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground py-12 text-center border-2 border-dashed rounded-lg">You haven't added any ingredients yet.</div>
+                <div className="text-sm text-muted-foreground py-12 text-center border-2 border-dashed rounded-lg">
+                  {user ? "You haven't added any ingredients yet." : "Please sign in to manage your bar."}
+                </div>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
       <div className="flex flex-col gap-6">
-        <Button size="lg" onClick={handleSuggestCocktails} disabled={isPending || ingredients.length === 0} className="self-start">
+        <Button size="lg" onClick={handleSuggestCocktails} disabled={isPending || !ingredients || ingredients.length === 0} className="self-start">
             {isPending ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
