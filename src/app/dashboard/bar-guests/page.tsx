@@ -1,19 +1,20 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useFormState } from 'react-dom';
 import { searchUsersAction, sendConnectionRequestAction, acceptConnectionRequestAction, removeConnectionAction } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, UserPlus, UserCheck, UserX, Send } from 'lucide-react';
+import { Loader2, Search, UserPlus, UserCheck, UserX, Send, BookHeart } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, or } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import type { Cocktail } from '@/types/cocktail';
 
 const initialSearchState = {
   users: [],
@@ -63,6 +64,15 @@ export default function BarGuestsPage() {
 
   const { data: connectedUsers, isLoading: isLoadingConnectedUsers } = useCollection<UserProfile>(usersRef);
 
+  const cocktailsCollectionRef = useMemoFirebase(() => {
+    if (firestore) {
+      return collection(firestore, 'cocktails');
+    }
+    return null;
+  }, [firestore]);
+  const { data: cocktails, isLoading: isLoadingCocktails } = useCollection<Cocktail>(cocktailsCollectionRef);
+
+  const cocktailsMap = useMemo(() => new Map(cocktails?.map(c => [c.slug, c])), [cocktails]);
   const connectedUsersMap = new Map(connectedUsers?.map(u => [u.id, u]));
 
   useEffect(() => {
@@ -95,6 +105,8 @@ export default function BarGuestsPage() {
   const myGuests = connections?.filter(c => c.status === 'accepted') || [];
   const pendingIncoming = connections?.filter(c => c.status === 'pending' && c.requesterId !== user?.uid) || [];
   const pendingOutgoing = connections?.filter(c => c.status === 'pending' && c.requesterId === user?.uid) || [];
+  
+  const isLoading = isLoadingConnections || isLoadingConnectedUsers || isLoadingCocktails;
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -143,7 +155,7 @@ export default function BarGuestsPage() {
                 <CardDescription>Manage your connections and invitations.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoadingConnections || isLoadingConnectedUsers ? (
+                {isLoading ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
@@ -179,11 +191,20 @@ export default function BarGuestsPage() {
                                     {myGuests.map(c => {
                                         const guestId = c.userIds.find(id => id !== user?.uid)!;
                                         const guestUser = connectedUsersMap.get(guestId);
+                                        const favoriteCocktailSlug = guestUser?.favoriteCocktail;
+                                        const favoriteCocktail = favoriteCocktailSlug ? cocktailsMap.get(favoriteCocktailSlug) : null;
+
                                         return (
                                             <li key={c.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-8 w-8"><AvatarImage src={guestUser?.photoURL}/><AvatarFallback>{guestUser?.email?.[0].toUpperCase()}</AvatarFallback></Avatar>
-                                                    <span className="text-sm">{guestUser?.email}</span>
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-8 w-8"><AvatarImage src={guestUser?.photoURL}/><AvatarFallback>{guestUser?.email?.[0].toUpperCase()}</AvatarFallback></Avatar>
+                                                        <span className="text-sm font-medium">{guestUser?.email}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground flex items-center gap-2 pl-10">
+                                                        <BookHeart className="h-3 w-3"/>
+                                                        {favoriteCocktail ? favoriteCocktail.name : <em>No favorite selected</em>}
+                                                    </div>
                                                 </div>
                                                 <Button size="sm" variant="ghost" onClick={() => handleRemoveConnection(c.id)}><UserX className="h-4 w-4" /></Button>
                                             </li>
@@ -227,5 +248,3 @@ export default function BarGuestsPage() {
     </div>
   );
 }
-
-    
