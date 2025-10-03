@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -60,16 +59,24 @@ export default function MyBarPage() {
   }
 
   const findWhatICanMake = () => {
-    const ownedIngredients = new Set(ingredients.map(i => i.name));
+    const ownedIngredients = new Set(ingredients.map(i => i.name.toLowerCase()));
     const results: Suggestion[] = [];
 
     cocktails.forEach(recipe => {
-        const owned = recipe.ingredients.filter(ing => ownedIngredients.has(ing.split(' ').slice(1).join(' ')));
-        if(owned.length > 0) {
+        let ownedCount = 0;
+        recipe.ingredients.forEach(ing => {
+            // Basic check: does the ingredient name from the recipe appear in our owned list?
+            const ingredientName = ing.split(' ').slice(1).join(' ').toLowerCase();
+            if (ownedIngredients.has(ingredientName)) {
+                ownedCount++;
+            }
+        });
+        
+        if (ownedCount > 0) {
             results.push({
                 name: recipe.name,
-                match: Math.round((owned.length / recipe.ingredients.length) * 100),
-                link: '/dashboard/content'
+                match: Math.round((ownedCount / recipe.ingredients.length) * 100),
+                link: '/dashboard/content' // This could be updated to a dynamic link
             });
         }
     });
