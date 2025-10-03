@@ -17,10 +17,10 @@ export default function Home() {
             <div className="flex flex-col items-center space-y-6 text-center">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none font-headline">
-                  Craft Your App, Your Way
+                  Craft Your Perfect Cocktail
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  Build and customize stunning mobile apps with ease. No code required.
+                  Your personal AI-powered guide to the world of mixology. Discover recipes, manage your bar, and create new drinks.
                 </p>
               </div>
               <div className="space-x-4">

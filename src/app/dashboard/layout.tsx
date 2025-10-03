@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -20,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import {
   Box,
   Palette,
-  Smartphone,
   User,
   BookUser,
   Home,
@@ -32,6 +30,7 @@ import {
   LogIn,
   BrainCircuit,
   Users,
+  Wine,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -48,11 +47,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
+  { href: '/dashboard/my-bar', label: 'My Bar', icon: Wine },
   { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/bar-guests', label: 'Bar Guests', icon: Users },
   { href: '/dashboard/customize', label: 'Customize', icon: Palette },
-  { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
 
 function UserMenu() {
@@ -87,7 +85,6 @@ function UserMenu() {
             <DropdownMenuItem asChild>
               <Link href="/dashboard/profile">Profile</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
             <form action={signOutAction} className="w-full">
                 <button type="submit" className="w-full">
@@ -127,7 +124,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const mainContentTitle = [...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}, {href: '/dashboard/ai-cocktail-generator', label: 'AI Cocktail Generator'}, {href: '/dashboard/profile', label: 'My Profile'}].find(item => pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true))?.label || 'Dashboard'
+  const mainContentTitle = [...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}, {href: '/dashboard/ai-cocktail-generator', label: 'AI Cocktail Generator'}, {href: '/dashboard/profile', label: 'My Profile'}, {href: '/dashboard/recipe-book', label: 'My Recipe Book'}].find(item => pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true))?.label || 'Dashboard'
 
   return (
     <SidebarProvider>
@@ -188,7 +185,7 @@ export default function DashboardLayout({
                     <SidebarMenuButton asChild isActive={pathname === '/dashboard/mixology-lab'}>
                       <Link href="/dashboard/mixology-lab">
                         <Lightbulb />
-                        <span>Quizzes</span>
+                        <span>Quizzes & Puzzles</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

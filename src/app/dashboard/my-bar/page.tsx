@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
@@ -32,10 +31,11 @@ function CameraCaptureDialog({ open, onOpenChange, onImageCapture }: { open: boo
   const { toast } = useToast();
 
   useEffect(() => {
+    let stream: MediaStream | null = null;
     if (open && !photoDataUrl) {
       const getCameraPermission = async () => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
           setHasCameraPermission(true);
 
           if (videoRef.current) {
@@ -53,10 +53,11 @@ function CameraCaptureDialog({ open, onOpenChange, onImageCapture }: { open: boo
       };
 
       getCameraPermission();
-    } else if (!open) {
-      // Cleanup when dialog closes
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+    } 
+    
+    return () => {
+      // Cleanup when dialog closes or component unmounts
+      if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
       setPhotoDataUrl(null); // Reset photo on close

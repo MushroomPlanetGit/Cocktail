@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -12,10 +11,16 @@ import {
   IdentifyIngredientOutput,
 } from '@/ai/flows/identify-ingredient';
 import { z } from 'zod';
+import { getAuthenticatedAppForUser } from '@/firebase/get-authenticated-app-for-user';
 
 export async function suggestCocktailsAction(
   input: z.infer<typeof SuggestCocktailsInputSchema>
 ): Promise<{ suggestions: CocktailSuggestion[] | null; error: string | null }> {
+  const { currentUser } = await getAuthenticatedAppForUser();
+  if (!currentUser) {
+    return { suggestions: null, error: "You must be logged in to get suggestions." };
+  }
+  
   const validatedFields = SuggestCocktailsInputSchema.safeParse(input);
 
   if (!validatedFields.success) {
@@ -51,6 +56,11 @@ export async function suggestCocktailsAction(
 export async function identifyIngredientAction(
   input: z.infer<typeof IdentifyIngredientInputSchema>
 ): Promise<{ ingredient: IdentifyIngredientOutput | null; error: string | null }> {
+  const { currentUser } = await getAuthenticatedAppForUser();
+  if (!currentUser) {
+    return { ingredient: null, error: "You must be logged in to identify ingredients." };
+  }
+
   const validatedFields = IdentifyIngredientInputSchema.safeParse(input);
 
   if (!validatedFields.success) {

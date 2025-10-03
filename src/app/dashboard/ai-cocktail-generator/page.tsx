@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
@@ -11,6 +10,8 @@ import { BrainCircuit, Loader2, ListOrdered, ShoppingCart, GlassWater } from 'lu
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { GenerateCocktailOutput } from '@/ai/flows/generate-cocktail';
+import { useUser } from '@/firebase';
+import Link from 'next/link';
 
 const initialState: {
     message: string | null,
@@ -35,6 +36,7 @@ function SubmitButton() {
 export default function AiCocktailGeneratorPage() {
   const [state, formAction] = useFormState(generateCocktailAction, initialState);
   const { toast } = useToast();
+  const { user } = useUser();
 
   useEffect(() => {
     if (state.message && (state.errors || state.message.includes('error'))) {
@@ -46,6 +48,21 @@ export default function AiCocktailGeneratorPage() {
     }
   }, [state, toast]);
 
+  if (!user) {
+    return (
+        <Card className="max-w-2xl mx-auto text-center">
+            <CardHeader>
+                <CardTitle>Access Denied</CardTitle>
+                <CardDescription>You must be signed in to use the AI Cocktail Generator.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/login">Sign In</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto">

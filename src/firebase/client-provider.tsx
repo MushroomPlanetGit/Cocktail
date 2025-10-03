@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useEffect, type ReactNode } from 'react';
@@ -6,36 +5,47 @@ import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { useUser } from './provider';
 import { initiateAnonymousSignIn } from './non-blocking-login';
-import { Auth, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { Auth, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { usePathname, useRouter } from 'next/navigation';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
-function AuthHandler({ auth }: { auth: Auth }) {
-  const { user, isUserLoading } = useUser();
+function AuthHandler({ auth, firestore }: { auth: Auth, firestore: any }) {
+  const { isUserLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (newUser) => {
-      // If the user is loaded, is not null, and is not anonymous,
-      // and they are currently on the login page, redirect them to the dashboard.
-      if (newUser && !newUser.isAnonymous && pathname === '/login') {
-        router.push('/dashboard');
-      }
+      if (newUser) {
+        if (!newUser.isAnonymous) {
+          // If a non-anonymous user signs in, create their profile document
+          const userRef = doc(firestore, "users", newUser.uid);
+          setDoc(userRef, {
+              id: newUser.uid,
+              email: newUser.email,
+              photoURL: newUser.photoURL,
+              registrationDate: newUser.metadata.creationTime || new Date().toISOString(),
+          }, { merge: true });
 
-      // If the user is not logged in (and not in the process of loading),
-      // initiate an anonymous sign-in. This gives them a temporary identity.
-      if (!isUserLoading && !newUser) {
+          // If they are on the login page, redirect them
+          if (pathname === '/login') {
+            router.push('/dashboard');
+          }
+        }
+      } else if (!isUserLoading) {
+        // If there's no user and we are not in the initial loading state,
+        // create an anonymous user for session continuity.
         initiateAnonymousSignIn(auth);
       }
     });
 
     return () => unsubscribe();
-  }, [auth, isUserLoading, pathname, router]);
+  }, [auth, isUserLoading, pathname, router, firestore]);
 
   return null;
 }
@@ -45,41 +55,21 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []);
 
-  // Initialize storage here as well
+  // Initialize storage
   if(firebaseServices.firebaseApp) {
     getStorage(firebaseServices.firebaseApp);
   }
 
-  // This effect will handle logging out the user from the client-side SDK
-  // when the server-side action redirects.
   useEffect(() => {
     const handleSignOut = async () => {
-        if (firebaseServices.auth.currentUser) {
-            // We only want to sign out if the user is NOT anonymous.
-            // This prevents the anonymous user from being signed out on every page refresh.
-            if (!firebaseServices.auth.currentUser.isAnonymous) {
-                await signOut(firebaseServices.auth);
-            }
+        // When the user is on the homepage, and they have an active session
+        // (that isn't anonymous), sign them out from the client SDK.
+        if (pathname === '/' && firebaseServices.auth.currentUser && !firebaseServices.auth.currentUser.isAnonymous) {
+            await signOut(firebaseServices.auth);
         }
     };
-
-    // This is a bit of a workaround. When a server action causes a redirect,
-    // the 'beforeunload' event is fired. We use this to sign the user out
-    // from the client SDK, ensuring the client state is in sync with the server.
-    const handleRedirect = (event: BeforeUnloadEvent) => {
-      // Check if the navigation is to the login page, which implies a sign-out.
-      // This is not perfect, but it's a reasonable heuristic.
-      if (document.activeElement?.getAttribute('href') === '/login') {
-        handleSignOut();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleRedirect);
-
-    return () => {
-        window.removeEventListener('beforeunload', handleRedirect);
-    };
-  }, [firebaseServices.auth]);
+    handleSignOut();
+  }, [pathname, firebaseServices.auth]);
 
   return (
     <FirebaseProvider
@@ -87,7 +77,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       auth={firebaseServices.auth}
       firestore={firebaseServices.firestore}
     >
-      <AuthHandler auth={firebaseServices.auth} />
+      <AuthHandler auth={firebaseServices.auth} firestore={firebaseServices.firestore}/>
       {children}
     </FirebaseProvider>
   );

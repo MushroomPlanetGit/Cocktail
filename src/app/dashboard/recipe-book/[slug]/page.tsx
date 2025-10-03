@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -7,10 +6,9 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Camera, PlusCircle, Trash2, Upload, Users, Wine, BookHeart, Loader2, RefreshCcw, UserCheck } from 'lucide-react';
+import { Camera, Trash2, Upload, Users, Wine, BookHeart, Loader2, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,7 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import type { Cocktail, RecipeNote } from '@/types/cocktail';
 import type { UserProfile } from '@/types/user';
 import type { Connection } from '@/app/dashboard/bar-guests/page';
@@ -37,6 +35,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
   const { slug } = params;
   const [recipe, setRecipe] = useState<Cocktail | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(true);
+  const router = useRouter();
 
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
@@ -116,6 +115,40 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
     }
   }, [recipeNote]);
 
+  // Handle camera stream
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    const getCameraPermission = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('Camera not supported by this browser.');
+        setHasCameraPermission(false);
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
+    };
+
+    if (!photoDataUrl) {
+      getCameraPermission();
+    }
+    
+    // Clean up camera stream
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [photoDataUrl]);
+
+
   if (isLoadingRecipe) {
      return (
         <div className="flex items-center justify-center min-h-[300px]">
@@ -136,7 +169,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
   };
 
   const handleSave = () => {
-    if (!recipeNoteRef) {
+    if (!recipeNoteRef || !user) {
       toast({
         title: 'Error',
         description: 'You must be logged in to save notes.',
@@ -145,12 +178,14 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
       return;
     }
     
-    const noteData: Partial<RecipeNote> = {
+    const noteData: Partial<RecipeNote> & { userId: string, recipeId: string } = {
       brands,
       notes,
       sharedWith,
-      recipeId: slug, // Store the recipe ID for context
-      photoUrl: photoDataUrl,
+      recipeId: slug,
+      photoUrl: photoDataUrl || '',
+      userId: user.uid,
+      updatedAt: new Date(),
     };
 
     setDocumentNonBlocking(recipeNoteRef, noteData, { merge: true });
@@ -171,11 +206,12 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
       return;
     }
 
-    deleteDocumentNonBlocking(recipeNoteRef);
-    
-    toast({
-      title: 'Notes Deleted',
-      description: 'Your notes for this recipe have been removed from your book.',
+    deleteDocumentNonBlocking(recipeNoteRef).then(() => {
+      toast({
+        title: 'Notes Deleted',
+        description: 'Your notes for this recipe have been removed from your book.',
+      });
+      router.push('/dashboard/recipe-book');
     });
   };
 
@@ -213,48 +249,6 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
     }
   };
 
-  useEffect(() => {
-    const getCameraPermission = async () => {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.error('Camera not supported by this browser.');
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Not Supported',
-          description: 'Your browser does not support camera access.',
-        });
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings to use this app.',
-        });
-      }
-    };
-
-    if (!photoDataUrl) {
-      getCameraPermission();
-    }
-    
-    // Clean up camera stream
-    return () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
-    };
-  }, [photoDataUrl, toast]);
-
   return (
     <div className="grid gap-6">
       <canvas ref={canvasRef} className="hidden" />
@@ -277,7 +271,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
               <BookHeart className="w-5 h-5" />
               Original Recipe
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                 <div>
                     <p className="font-medium">Ingredients:</p>
                     <ul className="list-disc pl-5 text-muted-foreground">
@@ -339,7 +333,7 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
                                  <Alert variant="destructive" className="w-full">
                                     <AlertTitle>Camera Access Denied</AlertTitle>
                                     <AlertDescription>
-                                        Please allow camera access to use this feature.
+                                        You may need to allow camera access in your browser settings.
                                     </AlertDescription>
                                 </Alert>
                             </div>

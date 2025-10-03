@@ -1,4 +1,3 @@
-
 'use server';
 import { generateCocktail, GenerateCocktailOutput } from '@/ai/flows/generate-cocktail';
 import { z } from 'zod';

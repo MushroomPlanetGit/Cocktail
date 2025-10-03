@@ -3,17 +3,11 @@
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  linkWithCredential,
-  EmailAuthProvider,
-  signOut
+  AuthErrorCodes
 } from 'firebase/auth';
-import { initializeFirebase } from '@/firebase';
-import { AuthErrorCodes } from 'firebase/auth';
 import { getAuthenticatedAppForUser } from '@/firebase/get-authenticated-app-for-user';
 import { linkAnonymousUser } from './auth-helpers';
+import { doc, setDoc } from 'firebase/firestore';
 
 const authSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -30,7 +24,7 @@ function handleAuthError(error: any) {
         return 'User not found. Please check your credentials or sign up.';
       case AuthErrorCodes.INVALID_LOGIN_CREDENTIALS:
          return 'Invalid email or password. Please try again.';
-      case AuthErrorCodes.WEAK_PASSWORD:
+      case "auth/weak-password": // Firebase REST API uses different codes
         return 'The password is too weak. Please use a stronger password.';
       default:
         return 'An unexpected authentication error occurred. Please try again.';
@@ -50,15 +44,10 @@ export async function loginAction(prevState: any, formData: FormData) {
     };
   }
 
-  // NOTE: This server action uses the REST API for auth and does not
-  // update the client-side session state. The redirect will force a
-  // reload and the Firebase client-side SDK will pick up the new user.
   try {
      const { app } = await getAuthenticatedAppForUser();
      if (!app) throw new Error("Firebase admin app not initialized");
 
-    // We can't use the client SDK here, so we call the REST API.
-    // This is a common pattern for server-side auth with Firebase.
      const res = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
       {
@@ -71,7 +60,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     );
     const authRes = await res.json();
     if (!res.ok) {
-       throw { code: `auth/${authRes.error.message.toLowerCase()}` };
+       throw { code: `auth/${authRes.error.message.toLowerCase().replace(/_/g, '-')}` };
     }
 
   } catch (error: any) {
@@ -99,13 +88,12 @@ export async function signupAction(prevState: any, formData: FormData) {
   const { email, password } = validatedFields.data;
 
   try {
-    const { currentUser: currentAnonymousUser } = await getAuthenticatedAppForUser();
+    const { currentUser: currentAnonymousUser, firestore } = await getAuthenticatedAppForUser();
     
+    let newUserId: string;
+
     if (!currentAnonymousUser || !currentAnonymousUser.isAnonymous) {
-        // This case is for when a non-anonymous user tries to sign up again,
-        // or if there is no user at all.
-        // We will just create a new user without linking.
-         const res = await fetch(
+        const res = await fetch(
             `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
             {
                 method: 'POST',
@@ -115,11 +103,23 @@ export async function signupAction(prevState: any, formData: FormData) {
         );
         const authRes = await res.json();
         if (!res.ok) {
-           throw { code: `auth/${authRes.error.message.toLowerCase()}` };
+           throw { code: `auth/${authRes.error.message.toLowerCase().replace(/_/g, '-')}` };
         }
+        newUserId = authRes.localId;
 
     } else {
        await linkAnonymousUser(email, password);
+       newUserId = currentAnonymousUser.uid;
+    }
+
+    // Create user profile document
+    if (newUserId && firestore) {
+      const userRef = doc(firestore, 'users', newUserId);
+      await setDoc(userRef, {
+        id: newUserId,
+        email: email,
+        registrationDate: new Date().toISOString(),
+      }, { merge: true });
     }
   
   } catch (error: any) {
@@ -134,9 +134,5 @@ export async function signupAction(prevState: any, formData: FormData) {
 }
 
 export async function signOutAction() {
-    // This is a client-side action that will be called from a form
-    // but the actual signout happens on the client via the SDK.
-    // The server doesn't need to do anything here other than redirect.
     redirect('/');
 }
-    

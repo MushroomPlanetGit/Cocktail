@@ -1,12 +1,15 @@
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpenCheck, BrainCircuit, FlaskConical, Home, Users } from "lucide-react";
+import { BookOpenCheck, BrainCircuit, FlaskConical, Users, Wine } from "lucide-react";
 import Link from "next/link";
+import type { User } from 'firebase/auth';
+import { useUser } from '@/firebase';
 
 const features = [
   {
-    icon: Home,
+    icon: Wine,
     title: "My Bar",
     description: "Manage your home inventory and get AI-powered suggestions for cocktails you can make right now.",
     href: "/dashboard/my-bar",
@@ -42,11 +45,23 @@ const features = [
   }
 ]
 
+function WelcomeHeader({ user, isUserLoading }: { user: User | null, isUserLoading: boolean}) {
+  if (isUserLoading) {
+    return <h1 className="text-3xl font-bold tracking-tight">Welcome to The Cocktail Companion</h1>
+  }
+  if (user && !user.isAnonymous && user.email) {
+    return <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.email}!</h1>
+  }
+  return <h1 className="text-3xl font-bold tracking-tight">Welcome to The Cocktail Companion</h1>
+}
+
 export default function DashboardHomePage() {
+  const { user, isUserLoading } = useUser();
+
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome to The Cocktail Companion</h1>
+        <WelcomeHeader user={user} isUserLoading={isUserLoading} />
         <p className="text-muted-foreground">
           Your personal AI-powered guide to the world of mixology.
         </p>

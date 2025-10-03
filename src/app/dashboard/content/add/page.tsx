@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,6 +22,7 @@ import { addCocktailAction } from './actions';
 import { useFormState } from 'react-dom';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useUser } from '@/firebase';
 
 const cocktailFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -49,6 +49,7 @@ const initialState = {
 export default function AddCocktailPage() {
   const [state, formAction] = useFormState(addCocktailAction, initialState);
   const { toast } = useToast();
+  const { user } = useUser();
 
   const form = useForm<CocktailFormValues>({
     resolver: zodResolver(cocktailFormSchema),
@@ -79,6 +80,22 @@ export default function AddCocktailPage() {
       }
     }
   }, [state, toast, form]);
+
+  if (!user || user.isAnonymous) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Access Denied</CardTitle>
+                <CardDescription>You must be signed in to add new recipes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/login">Sign In</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <Card>
@@ -187,7 +204,7 @@ export default function AddCocktailPage() {
                 <FormItem>
                   <FormLabel>Ingredients</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="2 oz Blanco Tequila, 1 oz Lime Juice, 0.5 oz Agave Nectar, 2 slices Jalapeño" {...field} />
+                    <Textarea placeholder="2 oz Blanco Tequila&#10;1 oz Lime Juice&#10;0.5 oz Agave Nectar&#10;2 slices Jalapeño" {...field} />
                   </FormControl>
                   <FormDescription>Enter each ingredient on a new line.</FormDescription>
                   <FormMessage />

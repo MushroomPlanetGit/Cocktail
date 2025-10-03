@@ -6,7 +6,7 @@ import { ThemeProvider } from "next-themes"
 
 export const metadata: Metadata = {
   title: 'The Cocktail Companion',
-  description: 'Build your mobile app with ease.',
+  description: 'Your personal AI-powered guide to the world of mixology.',
 };
 
 export default function RootLayout({
