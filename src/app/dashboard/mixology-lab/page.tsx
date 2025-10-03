@@ -51,6 +51,7 @@ export default function MixologyLabPage() {
   // Crossword state
   const [crossword, setCrossword] = useState<GenerateCrosswordOutput | null>(null);
   const [crosswordGrid, setCrosswordGrid] = useState<string[][]>([]);
+  const [incorrectCells, setIncorrectCells] = useState<[number, number][]>([]);
   const [isCrosswordLoading, setIsCrosswordLoading] = useState(true);
   const [crosswordCategory, setCrosswordCategory] = useState('random');
   const [crosswordDifficulty, setCrosswordDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
@@ -68,6 +69,7 @@ export default function MixologyLabPage() {
 
   const fetchCrossword = () => {
     setIsCrosswordLoading(true);
+    setIncorrectCells([]);
     startTransition(() => {
         generateCrosswordAction({ category: crosswordCategory, difficulty: crosswordDifficulty }).then(result => {
             if (result.error || !result.crossword) {
@@ -78,7 +80,7 @@ export default function MixologyLabPage() {
                 });
             } else {
                 setCrossword(result.crossword);
-                setCrosswordGrid(Array(result.crossword.rows).fill(null).map(() => Array(crossword.cols).fill('')));
+                setCrosswordGrid(Array(result.crossword.rows).fill(null).map(() => Array(result.crossword.cols).fill('')));
             }
             setIsCrosswordLoading(false);
         });
@@ -93,6 +95,7 @@ export default function MixologyLabPage() {
     const newGrid = crosswordGrid.map(r => [...r]);
     newGrid[row][col] = value.toUpperCase();
     setCrosswordGrid(newGrid);
+    setIncorrectCells(cells => cells.filter(([r,c]) => r !== row || c !== col));
 
     if (value && col < (crossword?.cols ?? 10) - 1) {
       const nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`) as HTMLInputElement;
@@ -194,21 +197,23 @@ export default function MixologyLabPage() {
 
   const checkCrossword = () => {
       if (!crossword) return;
-      let correct = true;
+      const incorrect: [number, number][] = [];
+      let isPerfect = true;
       for (let i = 0; i < crossword.rows; i++) {
           for (let j = 0; j < crossword.cols; j++) {
               if (crossword.layout[i][j] !== 'X' && crosswordGrid[i][j] !== crossword.layout[i][j]) {
-                  correct = false;
-                  break;
+                  isPerfect = false;
+                  incorrect.push([i,j]);
               }
           }
-          if(!correct) break;
       }
+      
+      setIncorrectCells(incorrect);
 
       toast({
-          title: correct ? 'Congratulations!' : 'Not Quite!',
-          description: correct ? 'You solved the puzzle!' : 'Some answers are incorrect. Keep trying!',
-          variant: correct ? 'default' : 'destructive'
+          title: isPerfect ? 'Congratulations!' : 'Not Quite!',
+          description: isPerfect ? 'You solved the puzzle!' : 'Some answers are incorrect. Check the highlighted cells!',
+          variant: isPerfect ? 'default' : 'destructive'
       });
   }
 
@@ -430,6 +435,7 @@ export default function MixologyLabPage() {
                             
                             const allClues: CrosswordClues[] = [...crossword.clues.across, ...crossword.clues.down];
                             const clueNumber = allClues.find(c => c.row === rowIndex && c.col === colIndex)?.num;
+                            const isIncorrect = incorrectCells.some(([r,c]) => r === rowIndex && c === colIndex);
 
                             return (
                               <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
@@ -441,7 +447,10 @@ export default function MixologyLabPage() {
                                   data-col={colIndex}
                                   value={crosswordGrid[rowIndex]?.[colIndex] || ''}
                                   onChange={(e) => handleCrosswordInputChange(rowIndex, colIndex, e.target.value)}
-                                  className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase"
+                                  className={cn(
+                                    "w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase transition-colors",
+                                    isIncorrect && "bg-red-200 dark:bg-red-800/50"
+                                  )}
                                 />
                               </div>
                             );
