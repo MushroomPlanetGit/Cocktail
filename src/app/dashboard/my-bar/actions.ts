@@ -5,6 +5,11 @@ import {
   SuggestCocktailsInputSchema,
   type CocktailSuggestion,
 } from '@/ai/flows/suggest-cocktails';
+import {
+  identifyIngredient,
+  IdentifyIngredientInputSchema,
+  IdentifyIngredientOutput,
+} from '@/ai/flows/identify-ingredient';
 import { z } from 'zod';
 
 export async function suggestCocktailsAction(
@@ -37,6 +42,34 @@ export async function suggestCocktailsAction(
     return {
       suggestions: null,
       error: 'An unexpected error occurred while generating suggestions.',
+    };
+  }
+}
+
+
+export async function identifyIngredientAction(
+  input: z.infer<typeof IdentifyIngredientInputSchema>
+): Promise<{ ingredient: IdentifyIngredientOutput | null; error: string | null }> {
+  const validatedFields = IdentifyIngredientInputSchema.safeParse(input);
+
+  if (!validatedFields.success) {
+    return {
+      ingredient: null,
+      error: 'Invalid input for ingredient identification.',
+    };
+  }
+
+  try {
+    const ingredient = await identifyIngredient(validatedFields.data);
+    return {
+      ingredient,
+      error: null,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      ingredient: null,
+      error: 'An unexpected error occurred while identifying the ingredient.',
     };
   }
 }

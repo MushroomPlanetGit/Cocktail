@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2, Search, Camera, Bot, Martini, Loader2, Sparkles, CheckCircle, ShoppingCart } from 'lucide-react';
+import { PlusCircle, Trash2, Search, Camera, Bot, Martini, Loader2, Sparkles, CheckCircle, ShoppingCart, RefreshCcw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
-import { suggestCocktailsAction } from './actions';
+import { suggestCocktailsAction, identifyIngredientAction } from './actions';
 import type { CocktailSuggestion } from '@/ai/flows/suggest-cocktails';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -17,16 +17,157 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocki
 import { collection, doc } from 'firebase/firestore';
 import type { UserInventoryItem } from '@/types/inventory';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+
+
+function CameraCaptureDialog({ open, onOpenChange, onImageCapture }: { open: boolean, onOpenChange: (open: boolean) => void, onImageCapture: (name: string) => void }) {
+  const [hasCameraPermission, setHasCameraPermission] = useState(true);
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [isIdentifying, startIdentification] = useTransition();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (open && !photoDataUrl) {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasCameraPermission(true);
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings.',
+          });
+        }
+      };
+
+      getCameraPermission();
+    } else if (!open) {
+      // Cleanup when dialog closes
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+      setPhotoDataUrl(null); // Reset photo on close
+    }
+  }, [open, photoDataUrl, toast]);
+  
+  const takePicture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        setPhotoDataUrl(dataUrl);
+      }
+    }
+  };
+
+  const retakePicture = () => setPhotoDataUrl(null);
+
+  const handleIdentify = () => {
+    if (!photoDataUrl) return;
+
+    startIdentification(async () => {
+      const result = await identifyIngredientAction({ photoDataUri: photoDataUrl });
+      if (result.error || !result.ingredient) {
+        toast({
+          title: 'Identification Failed',
+          description: result.error || 'Could not identify the ingredient from the photo.',
+          variant: 'destructive',
+        });
+      } else {
+        onImageCapture(result.ingredient.ingredientName);
+        toast({
+          title: 'Ingredient Identified!',
+          description: `Added "${result.ingredient.ingredientName}" to the input field.`,
+        });
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Identify Ingredient with AI</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4">
+           <canvas ref={canvasRef} className="hidden" />
+           <div className="w-full aspect-video rounded-md bg-muted overflow-hidden relative border">
+            {photoDataUrl ? (
+                <Image src={photoDataUrl} alt="Captured label" layout="fill" objectFit="cover" />
+            ) : (
+                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+            )}
+            {!hasCameraPermission && !photoDataUrl && (
+                <div className="absolute inset-0 flex items-center justify-center p-4 bg-background/80">
+                     <Alert variant="destructive" className="w-full">
+                        <AlertTitle>Camera Access Denied</AlertTitle>
+                        <AlertDescription>
+                            Please allow camera access to use this feature.
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            )}
+             <div className={cn("absolute inset-0 flex flex-col items-center justify-center bg-black/50 transition-opacity", isIdentifying ? "opacity-100" : "opacity-0 pointer-events-none")}>
+                <Loader2 className="h-10 w-10 animate-spin text-white" />
+                <p className="text-white mt-2">Identifying...</p>
+             </div>
+          </div>
+          <div className="flex gap-2">
+            {photoDataUrl ? (
+               <Button className="w-full" onClick={retakePicture} disabled={isIdentifying}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Retake
+                </Button>
+            ) : (
+                 <Button className="w-full" disabled={!hasCameraPermission} onClick={takePicture}>
+                    <Camera className="mr-2 h-4 w-4" />
+                    Take Picture
+                </Button>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleIdentify} disabled={!photoDataUrl || isIdentifying}>
+            {isIdentifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+            Identify
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 
 export default function MyBarPage() {
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newIngredientSize, setNewIngredientSize] = useState('750ml');
   const [suggestions, setSuggestions] = useState<CocktailSuggestion[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [isSuggesting, startSuggestion] = useTransition();
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+
+  const [isCaptureDialogOpen, setCaptureDialogOpen] = useState(false);
 
   const inventoryCollectionRef = useMemoFirebase(() => {
     if (user && firestore) {
@@ -64,7 +205,7 @@ export default function MyBarPage() {
   }
 
   const handleSuggestCocktails = () => {
-    startTransition(async () => {
+    startSuggestion(async () => {
       setSuggestions([]); // Clear previous suggestions
       const ingredientNames = ingredients?.map(i => i.name) || [];
       const result = await suggestCocktailsAction({ ingredients: ingredientNames });
@@ -80,10 +221,19 @@ export default function MyBarPage() {
       }
     });
   };
-
+  
+  const handleImageCapture = (name: string) => {
+    setNewIngredientName(name);
+    setCaptureDialogOpen(false);
+  }
 
   return (
     <div className="flex flex-col gap-8">
+       <CameraCaptureDialog 
+        open={isCaptureDialogOpen} 
+        onOpenChange={setCaptureDialogOpen}
+        onImageCapture={handleImageCapture}
+       />
       <Card>
         <CardHeader>
           <CardTitle>My Bar</CardTitle>
@@ -107,13 +257,9 @@ export default function MyBarPage() {
                         onKeyDown={(e) => e.key === 'Enter' && addIngredient()}
                         disabled={!user}
                       />
-                       <Button variant="outline" size="icon" className="shrink-0">
+                       <Button variant="outline" size="icon" className="shrink-0" onClick={() => setCaptureDialogOpen(true)} disabled={!user}>
                           <Bot className="h-5 w-5"/>
                           <span className="sr-only">Identify with AI</span>
-                      </Button>
-                      <Button variant="outline" size="icon" className="shrink-0">
-                          <Camera className="h-5 w-5"/>
-                          <span className="sr-only">Scan with Camera</span>
                       </Button>
                     </div>
                  </div>
@@ -131,7 +277,7 @@ export default function MyBarPage() {
                           <SelectItem value="N/A">N/A</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button onClick={addIngredient} className="shrink-0" disabled={!user}>
+                      <Button onClick={addIngredient} className="shrink-0" disabled={!user || !newIngredientName.trim()}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add
                       </Button>
@@ -200,8 +346,8 @@ export default function MyBarPage() {
         </CardContent>
       </Card>
       <div className="flex flex-col gap-6">
-        <Button size="lg" onClick={handleSuggestCocktails} disabled={isPending || !ingredients || ingredients.length === 0} className="self-start">
-            {isPending ? (
+        <Button size="lg" onClick={handleSuggestCocktails} disabled={isSuggesting || !ingredients || ingredients.length === 0} className="self-start">
+            {isSuggesting ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               <Search className="mr-2 h-5 w-5" />
@@ -209,7 +355,7 @@ export default function MyBarPage() {
           What can I make?
         </Button>
 
-        {isPending && (
+        {isSuggesting && (
            <Card>
                 <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px] text-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
