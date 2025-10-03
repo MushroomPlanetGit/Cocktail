@@ -35,6 +35,7 @@ import {
   LogOut,
   LogIn,
   BrainCircuit,
+  Users,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -55,6 +56,7 @@ const navItems = [
   { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
   { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
+  { href: '/dashboard/bar-guests', label: 'Bar Guests', icon: Users },
   { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
 
@@ -130,6 +132,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const mainContentTitle = [...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}, {href: '/dashboard/ai-cocktail-generator', label: 'AI Cocktail Generator'}, {href: '/dashboard/profile', label: 'My Profile'}].find(item => pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true))?.label || 'Dashboard'
 
   return (
     <SidebarProvider>
@@ -217,7 +220,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
              <SidebarTrigger />
              <h1 className="text-lg font-semibold font-headline">
-               {[...navItems, {href: '/dashboard/content', label: 'Master Recipes'}, {href: '/dashboard/mixology-lab', label: 'Mixology Lab'}, {href: '/dashboard/content/add', label: 'Add Cocktail'}, {href: '/dashboard/ai-cocktail-generator', label: 'AI Cocktail Generator'}].find(item => item.href === pathname)?.label || 'Dashboard'}
+               {mainContentTitle}
              </h1>
           </div>
           <UserMenu />
@@ -227,3 +230,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    
