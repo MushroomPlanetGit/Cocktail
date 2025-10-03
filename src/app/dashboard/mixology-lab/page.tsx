@@ -24,32 +24,32 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 const crosswordLayout = [
-  [1, 0, 0, 0, 0, 0, 'X', 0, 0, 2],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 0],
-  [3, 0, 0, 'X', 4, 0, 0, 0, 'X', 0],
-  ['X', 'X', 'X', 'X', 0, 'X', 'X', 'X', 'X', 'X'],
-  [5, 0, 0, 0, 0, 'X', 6, 0, 0, 0],
-  ['X', 'X', 'X', 'X', 'X', 'X', 0, 'X', 'X', 'X'],
-  [7, 0, 0, 0, 0, 0, 0, 'X', 'X', 'X'],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-  [8, 0, 0, 0, 0, 'X', 9, 0, 0, 0, 0, 0, 0],
-  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
+  ['M', 'O', 'J', 'I', 'T', 'O', 'X', 'R', 'X', 'G'],
+  ['A', 'X', 'U', 'X', 'E', 'X', 'X', 'U', 'X', 'I'],
+  ['R', 'X', 'L', 'I', 'M', 'E', 'X', 'M', 'X', 'N'],
+  ['T', 'X', 'I', 'X', 'P', 'X', 'X', 'X', 'X', 'X'],
+  ['I', 'V', 'O', 'D', 'K', 'A', 'S', 'A', 'L', 'T'],
+  ['N', 'X', 'C', 'X', 'E', 'X', 'Y', 'X', 'X', 'X'],
+  ['I', 'T', 'E', 'Q', 'U', 'I', 'L', 'A', 'X', 'X'],
+  ['X', 'X', 'A', 'X', 'L', 'X', 'U', 'X', 'X', 'X'],
+  ['X', 'S', 'Y', 'R', 'U', 'P', 'B', 'I', 'T', 'T', 'E', 'R', 'S'],
+  ['X', 'X', 'E', 'X', 'S', 'X', 'X', 'X', 'X', 'X'],
 ];
 
 const crosswordClues = {
     across: [
-        { num: 1, clue: "Classic Cuban highball with mint and lime", row: 0, col: 0, length: 6 },
-        { num: 4, clue: "Zesty citrus fruit in a Margarita", row: 2, col: 4, length: 4 },
-        { num: 5, clue: "Spirit often distilled from grain or potatoes", row: 4, col: 0, length: 5 },
-        { num: 6, clue: "Used to rim a Margarita glass", row: 4, col: 6, length: 4 },
-        { num: 7, clue: "Spirit made from the blue agave plant", row: 6, col: 0, length: 7 },
-        { num: 8, clue: "Sweetener used in many cocktails", row: 8, col: 0, length: 5 },
-        { num: 9, clue: "Aromatic ingredient, essential for an Old Fashioned", row: 8, col: 6, length: 7 },
+        { num: 1, clue: "Classic Cuban highball with mint and lime", row: 0, col: 0, answer: "MOJITO" },
+        { num: 4, clue: "Zesty citrus fruit in a Margarita", row: 2, col: 3, answer: "LIME" },
+        { num: 5, clue: "Spirit often distilled from grain or potatoes", row: 4, col: 1, answer: "VODKA" },
+        { num: 6, clue: "Used to rim a Margarita glass", row: 4, col: 6, answer: "SALT" },
+        { num: 7, clue: "Spirit made from the blue agave plant", row: 6, col: 1, answer: "TEQUILA" },
+        { num: 8, clue: "Sweetener used in many cocktails", row: 8, col: 1, answer: "SYRUP" },
+        { num: 9, clue: "Aromatic ingredient, essential for an Old Fashioned", row: 8, col: 6, answer: "BITTERS" },
     ],
     down: [
-        { num: 1, clue: "Base spirit of a classic Martini", row: 0, col: 0, length: 3},
-        { num: 2, clue: "Base spirit of a Daiquiri", row: 0, col: 9, length: 3 },
-        { num: 3, clue: "Botanical spirit from London", row: 2, col: 0, length: 3 },
+        { num: 1, clue: "Base spirit of a classic Martini", row: 0, col: 0, answer: "MARTINI"},
+        { num: 2, clue: "Base spirit of a Daiquiri", row: 0, col: 7, answer: "RUM" },
+        { num: 3, clue: "Botanical spirit from London", row: 0, col: 9, answer: "GIN" },
     ]
 };
 
@@ -179,6 +179,25 @@ export default function MixologyLabPage() {
   const nextFlashcard = () => {
     setIsFlipped(false);
     setFlashcardIndex((prevIndex) => (prevIndex + 1) % cocktails.length);
+  }
+
+  const checkCrossword = () => {
+    let correct = true;
+    for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 13; j++) {
+            if (crosswordLayout[i][j] !== 'X' && grid[i][j] !== crosswordLayout[i][j]) {
+                correct = false;
+                break;
+            }
+        }
+        if(!correct) break;
+    }
+
+    toast({
+        title: correct ? 'Congratulations!' : 'Not Quite!',
+        description: correct ? 'You solved the puzzle!' : 'Some of your answers are incorrect. Keep trying!',
+        variant: correct ? 'default' : 'destructive'
+    })
   }
 
 
@@ -348,7 +367,8 @@ export default function MixologyLabPage() {
                         return <div key={`${rowIndex}-${colIndex}`} className="bg-foreground" />;
                       }
                       
-                      const clueNumber = [...crosswordClues.across, ...crosswordClues.down].find(c => c.row === rowIndex && c.col === colIndex)?.num;
+                      const clueData = [...crosswordClues.across, ...crosswordClues.down];
+                      const clueNumber = clueData.find(c => c.row === rowIndex && c.col === colIndex)?.num;
 
                       return (
                         <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
@@ -381,7 +401,7 @@ export default function MixologyLabPage() {
                     {crosswordClues.down.map(c => <li key={`down-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
                   </ul>
                 </div>
-                <Button className="w-full mt-6">Check Puzzle</Button>
+                <Button className="w-full mt-6" onClick={checkCrossword}>Check Puzzle</Button>
               </div>
             </div>
           </TabsContent>
