@@ -16,7 +16,9 @@ import type { GenerateQuizQuestionOutput } from '@/ai/flows/generate-quiz-questi
 import type { GenerateWhatAmIPuzzleOutput } from '@/ai/flows/generate-what-am-i-puzzle';
 import type { CrosswordClues, GenerateCrosswordOutput } from '@/ai/flows/generate-crossword';
 import { useToast } from '@/hooks/use-toast';
-import { cocktails, type Cocktail } from '@/lib/recipes';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Cocktail } from '@/types/cocktail';
 
 
 // Helper function to shuffle an array
@@ -45,14 +47,24 @@ export default function MixologyLabPage() {
   // Flashcard state
   const [flashcardIndex, setFlashcardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const currentFlashcard: Cocktail = useMemo(() => cocktails[flashcardIndex], [flashcardIndex]);
-  
+
   // Crossword state
   const [crossword, setCrossword] = useState<GenerateCrosswordOutput | null>(null);
   const [crosswordGrid, setCrosswordGrid] = useState<string[][]>([]);
   const [isCrosswordLoading, setIsCrosswordLoading] = useState(true);
   const [crosswordCategory, setCrosswordCategory] = useState('random');
   const [crosswordDifficulty, setCrosswordDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+
+  const firestore = useFirestore();
+  const cocktailsCollectionRef = useMemoFirebase(() => {
+    if (firestore) {
+      return collection(firestore, 'cocktails');
+    }
+    return null;
+  }, [firestore]);
+  const { data: cocktails, isLoading: isLoadingCocktails } = useCollection<Cocktail>(cocktailsCollectionRef);
+
+  const currentFlashcard: Cocktail | undefined = useMemo(() => cocktails?.[flashcardIndex], [cocktails, flashcardIndex]);
 
   const fetchCrossword = () => {
     setIsCrosswordLoading(true);
@@ -66,7 +78,7 @@ export default function MixologyLabPage() {
                 });
             } else {
                 setCrossword(result.crossword);
-                setCrosswordGrid(Array(result.crossword.rows).fill(null).map(() => Array(result.crossword.cols).fill('')));
+                setCrosswordGrid(Array(result.crossword.rows).fill(null).map(() => Array(crossword.cols).fill('')));
             }
             setIsCrosswordLoading(false);
         });
@@ -175,7 +187,9 @@ export default function MixologyLabPage() {
   
   const nextFlashcard = () => {
     setIsFlipped(false);
-    setFlashcardIndex((prevIndex) => (prevIndex + 1) % cocktails.length);
+    if (cocktails) {
+        setFlashcardIndex((prevIndex) => (prevIndex + 1) % cocktails.length);
+    }
   }
 
   const checkCrossword = () => {
@@ -500,6 +514,18 @@ export default function MixologyLabPage() {
            <TabsContent value="flashcards" className="pt-6">
             <div className="max-w-md mx-auto">
               <h3 className="text-lg font-semibold text-center mb-4">Flashcards</h3>
+                {isLoadingCocktails ? (
+                   <div className="flex items-center justify-center min-h-[250px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : !currentFlashcard ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed rounded-lg min-h-[250px]">
+                    <h3 className="text-lg font-semibold">No Recipes Found</h3>
+                    <p className="text-muted-foreground mt-2">
+                      Add some cocktails to the Master Recipe list to create flashcards.
+                    </p>
+                  </div>
+                ) : (
                 <Card className="aspect-video flex items-center justify-center p-6 text-center relative cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
                   <div className={cn("transition-transform duration-500 w-full", {"[transform:rotateY(180deg)]": isFlipped})}>
                     {!isFlipped ? (
@@ -516,19 +542,20 @@ export default function MixologyLabPage() {
                     )}
                   </div>
                 </Card>
+                )}
                 <div className="mt-4 flex justify-center">
-                  <Button variant="ghost" onClick={() => setIsFlipped(!isFlipped)}>
+                  <Button variant="ghost" onClick={() => setIsFlipped(!isFlipped)} disabled={isLoadingCocktails || !cocktails}>
                     <Repeat className="mr-2 h-4 w-4" />
                     Flip Card
                   </Button>
                 </div>
                  <Separator className="my-6" />
                  <div className="flex justify-between">
-                    <Button variant="outline">
+                    <Button variant="outline" disabled={isLoadingCocktails || !cocktails}>
                         Mark as Learned
                         <Check className="ml-2 h-4 w-4" />
                     </Button>
-                    <Button onClick={nextFlashcard}>
+                    <Button onClick={nextFlashcard} disabled={isLoadingCocktails || !cocktails}>
                         Next Card
                         <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
