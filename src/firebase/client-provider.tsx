@@ -54,6 +54,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   const firebaseServices = useMemo(() => {
     return initializeFirebase();
   }, []);
+  const pathname = usePathname();
 
   // Initialize storage
   if(firebaseServices.firebaseApp) {
