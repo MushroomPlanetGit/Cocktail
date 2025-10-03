@@ -1,17 +1,21 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ThemeCustomizer } from "@/components/theme-customizer"
 
 export default function CustomizePage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Customize Your App</CardTitle>
-        <CardDescription>This is where you'll personalize your app's appearance.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg">
-          <p className="text-center text-muted-foreground">UI customization controls for colors, fonts, and layouts will be available here.</p>
+    <div className="flex flex-col gap-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Customize
+          </h1>
+          <p className="text-muted-foreground">
+            Pick a style and color for your components.
+          </p>
         </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+      <div className="max-w-xl">
+        <ThemeCustomizer />
+      </div>
+    </div>
+  )
 }
