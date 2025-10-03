@@ -69,7 +69,6 @@ export default function RecipeBookPage() {
       sharedWith,
       recipeId: RECIPE_ID, // Store the recipe ID for context
       photoUrl: photoDataUrl, // We'll handle uploads later
-      updatedAt: new Date().toISOString(),
     };
 
     setDocumentNonBlocking(recipeNoteRef, noteData, { merge: true });
@@ -102,7 +101,13 @@ export default function RecipeBookPage() {
   useEffect(() => {
     const getCameraPermission = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('Camera not supported by this browser.');
         setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Not Supported',
+          description: 'Your browser does not support camera access.',
+        });
         return;
       }
       try {
@@ -114,10 +119,17 @@ export default function RecipeBookPage() {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings to use this app.',
+        });
       }
     };
 
-    getCameraPermission();
+    if (!photoDataUrl) {
+      getCameraPermission();
+    }
     
     // Clean up camera stream
     return () => {
@@ -126,7 +138,7 @@ export default function RecipeBookPage() {
             stream.getTracks().forEach(track => track.stop());
         }
     };
-  }, []);
+  }, [photoDataUrl, toast]);
 
   return (
     <div className="grid gap-6">
@@ -209,14 +221,14 @@ export default function RecipeBookPage() {
                     </h3>
                     <div className="w-full aspect-video rounded-md bg-muted overflow-hidden relative border">
                         {photoDataUrl ? (
-                            <Image src={photoDataUrl} alt="My Cocktail" layout="fill" objectFit="cover" />
+                            <Image src={photoDataUrl} alt="My Cocktail" fill objectFit="cover" />
                         ) : (
                             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                         )}
                         {!hasCameraPermission && !photoDataUrl &&(
                             <div className="absolute inset-0 flex items-center justify-center p-4 bg-background/80">
                                  <Alert variant="destructive" className="w-full">
-                                    <AlertTitle>Camera Access Required</AlertTitle>
+                                    <AlertTitle>Camera Access Denied</AlertTitle>
                                     <AlertDescription>
                                         Please allow camera access to use this feature.
                                     </AlertDescription>
@@ -227,17 +239,17 @@ export default function RecipeBookPage() {
                     <div className="flex gap-2">
                         {photoDataUrl ? (
                            <Button className="w-full" onClick={retakePicture}>
-                                <RefreshCcw className="mr-2" />
+                                <RefreshCcw className="mr-2 h-4 w-4" />
                                 Retake
                             </Button>
                         ) : (
                              <Button className="w-full" disabled={!hasCameraPermission} onClick={takePicture}>
-                                <Camera className="mr-2" />
+                                <Camera className="mr-2 h-4 w-4" />
                                 Take Picture
                             </Button>
                         )}
                         <Button variant="outline" className="w-full">
-                            <Upload className="mr-2" />
+                            <Upload className="mr-2 h-4 w-4" />
                             Upload
                         </Button>
                     </div>
@@ -263,7 +275,7 @@ export default function RecipeBookPage() {
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
             <Button variant="destructive" disabled={isLoading || !user}>
-                <Trash2 className="mr-2"/>
+                <Trash2 className="mr-2 h-4 w-4"/>
                 Delete from My Book
             </Button>
             <Button onClick={handleSave} disabled={isLoading || !user}>Save Notes</Button>
@@ -272,5 +284,3 @@ export default function RecipeBookPage() {
     </div>
   );
 }
-
-    
