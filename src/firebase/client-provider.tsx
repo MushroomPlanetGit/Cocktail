@@ -6,6 +6,7 @@ import { initializeFirebase } from '@/firebase';
 import { useUser } from './provider';
 import { initiateAnonymousSignIn } from './non-blocking-login';
 import { Auth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -28,6 +29,11 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []);
 
+  // Initialize storage here as well
+  if(firebaseServices.firebaseApp) {
+    getStorage(firebaseServices.firebaseApp);
+  }
+
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}
@@ -39,3 +45,5 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     </FirebaseProvider>
   );
 }
+
+    
