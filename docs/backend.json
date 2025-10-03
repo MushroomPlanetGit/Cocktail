@@ -1,89 +1,6 @@
 
 {
   "entities": {
-    "Template": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Template",
-      "type": "object",
-      "description": "Represents a pre-designed app template.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the template."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the template."
-        },
-        "description": {
-          "type": "string",
-          "description": "Detailed description of the template."
-        },
-        "category": {
-          "type": "string",
-          "description": "Category of the template (e.g., Business, Education, Entertainment)."
-        },
-        "previewImageURL": {
-          "type": "string",
-          "description": "URL of the preview image for the template.",
-          "format": "uri"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "description",
-        "category",
-        "previewImageURL"
-      ]
-    },
-    "Project": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Project",
-      "type": "object",
-      "description": "Represents a user's app project based on a selected template.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the project."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Project)"
-        },
-        "templateId": {
-          "type": "string",
-          "description": "Reference to Template. (Relationship: Template 1:N Project)"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the project (user-defined)."
-        },
-        "creationDate": {
-          "type": "string",
-          "description": "Date when the project was created.",
-          "format": "date-time"
-        },
-        "lastModifiedDate": {
-          "type": "string",
-          "description": "Date when the project was last modified.",
-          "format": "date-time"
-        },
-        "configuration": {
-          "type": "string",
-          "description": "JSON string that stores the configuration for the project UI elements"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "templateId",
-        "name",
-        "creationDate",
-        "lastModifiedDate",
-        "configuration"
-      ]
-    },
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
@@ -125,42 +42,6 @@
       "required": [
         "id",
         "email"
-      ]
-    },
-    "ContentSuggestion": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ContentSuggestion",
-      "type": "object",
-      "description": "Represents an AI-powered content suggestion for the user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the content suggestion."
-        },
-        "projectId": {
-          "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N ContentSuggestion)"
-        },
-        "originalContent": {
-          "type": "string",
-          "description": "The original content provided by the user."
-        },
-        "suggestedContent": {
-          "type": "string",
-          "description": "The AI-powered content suggestion."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp of when the suggestion was generated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "projectId",
-        "originalContent",
-        "suggestedContent",
-        "timestamp"
       ]
     },
     "RecipeNote": {
@@ -370,22 +251,6 @@
   "firestore": {
     "structure": [
       {
-        "path": "/templates/{templateId}",
-        "definition": {
-          "entityName": "Template",
-          "schema": {
-            "$ref": "#/backend/entities/Template"
-          },
-          "description": "Stores pre-designed app templates.",
-          "params": [
-            {
-              "name": "templateId",
-              "description": "Unique identifier for the template."
-            }
-          ]
-        }
-      },
-      {
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
@@ -397,50 +262,6 @@
             {
               "name": "userId",
               "description": "Unique identifier for the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/projects/{projectId}",
-        "definition": {
-          "entityName": "Project",
-          "schema": {
-            "$ref": "#/backend/entities/Project"
-          },
-          "description": "Stores user's app projects. Includes 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            },
-            {
-              "name": "projectId",
-              "description": "Unique identifier for the project."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/projects/{projectId}/contentSuggestions/{contentSuggestionId}",
-        "definition": {
-          "entityName": "ContentSuggestion",
-          "schema": {
-            "$ref": "#/backend/entities/ContentSuggestion"
-          },
-          "description": "Stores AI-powered content suggestions for a project. Includes 'projectId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            },
-            {
-              "name": "projectId",
-              "description": "Unique identifier for the project."
-            },
-            {
-              "name": "contentSuggestionId",
-              "description": "Unique identifier for the content suggestion."
             }
           ]
         }

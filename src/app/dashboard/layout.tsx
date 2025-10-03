@@ -51,12 +51,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 const navItems = [
-  { href: '/dashboard', label: 'Templates', icon: LayoutGrid },
-  { href: '/dashboard/customize', label: 'Customize', icon: Palette },
-  { href: '/dashboard/ai-content', label: 'AI Content', icon: Sparkles },
-  { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
+  { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/my-bar', label: 'My Bar', icon: Home },
+  { href: '/dashboard/recipe-book', label: 'My Recipe Book', icon: BookUser },
   { href: '/dashboard/bar-guests', label: 'Bar Guests', icon: Users },
+  { href: '/dashboard/customize', label: 'Customize', icon: Palette },
   { href: '/dashboard/preview', label: 'Preview', icon: Smartphone },
 ];
 
@@ -230,5 +229,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
