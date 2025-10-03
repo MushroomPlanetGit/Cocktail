@@ -24,24 +24,24 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 const crosswordLayout = [
-  ["M", "O", "J", "I", "T", "O", "X", "R", "U", "M"],
-  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
-  ["G", "I", "N", "X", "L", "I", "M", "E", "X", "X"],
-  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
-  ["V", "O", "D", "K", "A", "X", "S", "A", "L", "T"],
-  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
-  ["T", "E", "Q", "U", "I", "L", "A", "X", "X", "X"],
-  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
-  ["S", "U", "G", "A", "R", "X", "B", "I", "T", "T", "E", "R", "S"],
-  ["X", "X", "X", "X", "X", "X", "X", "X", "X", "X"],
+  [1, 0, 0, 0, 0, 0, 'X', 0, 0, 2],
+  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 0],
+  [3, 0, 0, 'X', 4, 0, 0, 0, 'X', 0],
+  ['X', 'X', 'X', 'X', 0, 'X', 'X', 'X', 'X', 'X'],
+  [5, 0, 0, 0, 0, 'X', 6, 0, 0, 0],
+  ['X', 'X', 'X', 'X', 'X', 'X', 0, 'X', 'X', 'X'],
+  [7, 0, 0, 0, 0, 0, 0, 'X', 'X', 'X'],
+  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
+  [8, 0, 0, 0, 0, 'X', 9, 0, 0, 0, 0, 0, 0],
+  ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
 ];
 
 const crosswordClues = {
     across: [
         { num: 1, clue: "Classic Cuban highball with mint and lime", row: 0, col: 0, length: 6 },
-        { num: 3, clue: "Zesty citrus fruit in a Margarita", row: 2, col: 4, length: 4 },
+        { num: 4, clue: "Zesty citrus fruit in a Margarita", row: 2, col: 4, length: 4 },
         { num: 5, clue: "Spirit often distilled from grain or potatoes", row: 4, col: 0, length: 5 },
-        { num: 6, clue: "Used to rim a Margarita glass", row: 4, col: 7, length: 4 },
+        { num: 6, clue: "Used to rim a Margarita glass", row: 4, col: 6, length: 4 },
         { num: 7, clue: "Spirit made from the blue agave plant", row: 6, col: 0, length: 7 },
         { num: 8, clue: "Sweetener used in many cocktails", row: 8, col: 0, length: 5 },
         { num: 9, clue: "Aromatic ingredient, essential for an Old Fashioned", row: 8, col: 6, length: 7 },
@@ -49,7 +49,7 @@ const crosswordClues = {
     down: [
         { num: 1, clue: "Base spirit of a classic Martini", row: 0, col: 0, length: 3},
         { num: 2, clue: "Base spirit of a Daiquiri", row: 0, col: 9, length: 3 },
-        { num: 4, clue: "Common garnish or ingredient in sours", row: 2, col: 4, length: 4 },
+        { num: 3, clue: "Botanical spirit from London", row: 2, col: 0, length: 3 },
     ]
 };
 
@@ -77,12 +77,19 @@ export default function MixologyLabPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const currentFlashcard: Cocktail = useMemo(() => cocktails[flashcardIndex], [flashcardIndex]);
   
-  const [grid, setGrid] = useState<string[][]>(Array(10).fill(null).map(() => Array(10).fill('')));
+  const [grid, setGrid] = useState<string[][]>(Array(10).fill(null).map(() => Array(13).fill('')));
 
   const handleInputChange = (row: number, col: number, value: string) => {
     const newGrid = grid.map(r => [...r]);
     newGrid[row][col] = value.toUpperCase();
     setGrid(newGrid);
+
+    if (value && col < 12) {
+      const nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`) as HTMLInputElement;
+      if (nextInput && crosswordLayout[row][col+1] !== 'X') {
+        nextInput.focus();
+      }
+    }
   };
 
 
@@ -334,7 +341,7 @@ export default function MixologyLabPage() {
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-4">Cocktail Crossword #1</h3>
-                <div className="grid grid-cols-10 grid-rows-10 gap-px bg-foreground max-w-sm aspect-square border">
+                <div className="grid grid-cols-13 gap-px bg-foreground max-w-md aspect-square border">
                   {crosswordLayout.map((row, rowIndex) => (
                     row.map((cell, colIndex) => {
                       if (cell === 'X') {
@@ -345,13 +352,15 @@ export default function MixologyLabPage() {
 
                       return (
                         <div key={`${rowIndex}-${colIndex}`} className="bg-background relative">
-                          {clueNumber && <span className="absolute top-0 left-0.5 text-xs">{clueNumber}</span>}
+                          {clueNumber && <span className="absolute top-0 left-0.5 text-[10px] text-muted-foreground">{clueNumber}</span>}
                            <Input
                             type="text"
                             maxLength={1}
+                            data-row={rowIndex}
+                            data-col={colIndex}
                             value={grid[rowIndex]?.[colIndex] || ''}
                             onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
-                            className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary"
+                            className="w-full h-full text-center text-lg p-0 border-0 focus-visible:ring-1 ring-primary uppercase"
                           />
                         </div>
                       );
@@ -363,13 +372,13 @@ export default function MixologyLabPage() {
                 <div className="mb-6">
                   <h4 className="font-semibold text-primary mb-2">Across</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                     {crosswordClues.across.map(c => <li key={`across-${c.num}`}>{c.num}. {c.clue}</li>)}
+                     {crosswordClues.across.map(c => <li key={`across-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
                   </ul>
                 </div>
                 <div>
                   <h4 className="font-semibold text-primary mb-2">Down</h4>
                    <ul className="space-y-2 text-sm text-muted-foreground">
-                    {crosswordClues.down.map(c => <li key={`down-${c.num}`}>{c.num}. {c.clue}</li>)}
+                    {crosswordClues.down.map(c => <li key={`down-${c.num}`}><span className="font-semibold">{c.num}.</span> {c.clue}</li>)}
                   </ul>
                 </div>
                 <Button className="w-full mt-6">Check Puzzle</Button>
@@ -462,5 +471,3 @@ export default function MixologyLabPage() {
     </Card>
   );
 }
-
-    
