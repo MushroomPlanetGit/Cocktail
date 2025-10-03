@@ -9,10 +9,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Camera, PlusCircle, Trash2, Upload, Users, Wine, BookHeart, Loader2 } from 'lucide-react';
+import { Camera, PlusCircle, Trash2, Upload, Users, Wine, BookHeart, Loader2, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 const RECIPE_ID = 'espresso-martini'; // Hardcoded for this example page
 
@@ -20,6 +21,7 @@ export default function RecipeBookPage() {
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -27,6 +29,8 @@ export default function RecipeBookPage() {
   const [brands, setBrands] = useState('');
   const [notes, setNotes] = useState('');
   const [sharedWith, setSharedWith] = useState('');
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+
 
   // Create a memoized reference to the user's recipe note document
   const recipeNoteRef = useMemoFirebase(() => {
@@ -37,7 +41,7 @@ export default function RecipeBookPage() {
   }, [user, firestore]);
 
   // Use the useDoc hook to fetch data in real-time
-  const { data: recipeNote, isLoading } = useDoc<{ brands: string, notes: string, sharedWith: string }>(recipeNoteRef);
+  const { data: recipeNote, isLoading } = useDoc<{ brands: string, notes: string, sharedWith: string, photoUrl?: string }>(recipeNoteRef);
   
   // Populate form fields when data is loaded from Firestore
   useEffect(() => {
@@ -45,6 +49,7 @@ export default function RecipeBookPage() {
       setBrands(recipeNote.brands || '');
       setNotes(recipeNote.notes || '');
       setSharedWith(recipeNote.sharedWith || '');
+      setPhotoDataUrl(recipeNote.photoUrl || null);
     }
   }, [recipeNote]);
 
@@ -63,6 +68,7 @@ export default function RecipeBookPage() {
       notes,
       sharedWith,
       recipeId: RECIPE_ID, // Store the recipe ID for context
+      photoUrl: photoDataUrl, // We'll handle uploads later
       updatedAt: new Date().toISOString(),
     };
 
@@ -72,6 +78,25 @@ export default function RecipeBookPage() {
       title: 'Notes Saved!',
       description: 'Your notes for Espresso Martini have been saved.',
     });
+  };
+
+  const takePicture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        setPhotoDataUrl(dataUrl);
+      }
+    }
+  };
+
+  const retakePicture = () => {
+    setPhotoDataUrl(null);
   };
 
   useEffect(() => {
@@ -93,10 +118,19 @@ export default function RecipeBookPage() {
     };
 
     getCameraPermission();
+    
+    // Clean up camera stream
+    return () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
   }, []);
 
   return (
     <div className="grid gap-6">
+      <canvas ref={canvasRef} className="hidden" />
       <Card>
         <CardHeader>
           <CardTitle>Espresso Martini</CardTitle>
@@ -174,8 +208,12 @@ export default function RecipeBookPage() {
                         My Cocktail Photo
                     </h3>
                     <div className="w-full aspect-video rounded-md bg-muted overflow-hidden relative border">
-                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                        {!hasCameraPermission && (
+                        {photoDataUrl ? (
+                            <Image src={photoDataUrl} alt="My Cocktail" layout="fill" objectFit="cover" />
+                        ) : (
+                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                        )}
+                        {!hasCameraPermission && !photoDataUrl &&(
                             <div className="absolute inset-0 flex items-center justify-center p-4 bg-background/80">
                                  <Alert variant="destructive" className="w-full">
                                     <AlertTitle>Camera Access Required</AlertTitle>
@@ -187,10 +225,17 @@ export default function RecipeBookPage() {
                         )}
                     </div>
                     <div className="flex gap-2">
-                        <Button className="w-full" disabled={!hasCameraPermission}>
-                            <Camera className="mr-2" />
-                            Take Picture
-                        </Button>
+                        {photoDataUrl ? (
+                           <Button className="w-full" onClick={retakePicture}>
+                                <RefreshCcw className="mr-2" />
+                                Retake
+                            </Button>
+                        ) : (
+                             <Button className="w-full" disabled={!hasCameraPermission} onClick={takePicture}>
+                                <Camera className="mr-2" />
+                                Take Picture
+                            </Button>
+                        )}
                         <Button variant="outline" className="w-full">
                             <Upload className="mr-2" />
                             Upload
@@ -227,3 +272,5 @@ export default function RecipeBookPage() {
     </div>
   );
 }
+
+    
