@@ -16,7 +16,7 @@ const RefineContentInputSchema = z.object({
   style: z
     .string()
     .describe(
-      'The desired style for the content (e.g., formal, casual, persuasive).'n
+      'The desired style for the content (e.g., formal, casual, persuasive).'
     ),
 });
 export type RefineContentInput = z.infer<typeof RefineContentInputSchema>;

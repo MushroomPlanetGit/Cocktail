@@ -39,5 +39,4 @@ export function linkAnonymousUserWithCredential(authInstance: Auth, credential: 
   }
   linkWithCredential(authInstance.currentUser, credential);
 }
-
     
