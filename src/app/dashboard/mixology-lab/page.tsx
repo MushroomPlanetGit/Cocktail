@@ -60,18 +60,20 @@ export default function MixologyLabPage() {
     setIsPuzzleLoading(true);
     setGuess('');
     setShowPuzzleResult(false);
-    generateWhatAmIPuzzleAction().then(result => {
-      if (result.error || !result.puzzle) {
-        toast({
-          title: 'Error Generating Puzzle',
-          description: result.error || 'Could not fetch a new puzzle.',
-          variant: 'destructive',
-        });
-      } else {
-        setPuzzle(result.puzzle);
-      }
-      setIsPuzzleLoading(false);
-    });
+    startTransition(() => {
+      generateWhatAmIPuzzleAction().then(result => {
+        if (result.error || !result.puzzle) {
+          toast({
+            title: 'Error Generating Puzzle',
+            description: result.error || 'Could not fetch a new puzzle.',
+            variant: 'destructive',
+          });
+        } else {
+          setPuzzle(result.puzzle);
+        }
+        setIsPuzzleLoading(false);
+      });
+    })
   };
 
   useEffect(() => {
@@ -327,7 +329,7 @@ export default function MixologyLabPage() {
           <TabsContent value="what-am-i" className="pt-6">
              <div className="max-w-md mx-auto">
                 <h3 className="text-lg font-semibold text-center mb-4">I am a cocktail...</h3>
-                {isPuzzleLoading ? (
+                {isPuzzleLoading || isPending ? (
                   <div className="flex items-center justify-center min-h-[200px]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>

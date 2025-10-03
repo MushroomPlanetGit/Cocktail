@@ -9,6 +9,7 @@ import { PlusCircle, Trash2, Search, Camera, Bot, Martini } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { cocktails } from '@/lib/recipes';
 
 interface Ingredient {
   id: number;
@@ -30,15 +31,6 @@ const initialIngredients: Ingredient[] = [
   { id: 4, name: 'Lime Juice', level: 25, size: 'N/A' },
   { id: 5, name: 'Coffee Liqueur', level: 90, size: '750ml' },
 ];
-
-// This is a placeholder for a real recipe data source
-const allRecipes = [
-    { name: "Espresso Martini", ingredients: ["Vodka", "Coffee Liqueur", "Espresso"], link: "/dashboard/content" },
-    { name: "Classic Margarita", ingredients: ["Tequila", "Lime Juice", "Triple Sec"], link: "/dashboard/content" },
-    { name: "Mojito", ingredients: ["White Rum", "Lime Juice", "Sugar", "Mint"], link: "/dashboard/content" },
-    { name: "Gimlet", ingredients: ["Gin", "Lime Juice", "Simple Syrup"], link: "/dashboard/content" },
-];
-
 
 export default function MyBarPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
@@ -71,13 +63,13 @@ export default function MyBarPage() {
     const ownedIngredients = new Set(ingredients.map(i => i.name));
     const results: Suggestion[] = [];
 
-    allRecipes.forEach(recipe => {
-        const owned = recipe.ingredients.filter(ing => ownedIngredients.has(ing));
+    cocktails.forEach(recipe => {
+        const owned = recipe.ingredients.filter(ing => ownedIngredients.has(ing.split(' ').slice(1).join(' ')));
         if(owned.length > 0) {
             results.push({
                 name: recipe.name,
                 match: Math.round((owned.length / recipe.ingredients.length) * 100),
-                link: recipe.link
+                link: '/dashboard/content'
             });
         }
     });
