@@ -7,5 +7,3 @@ export interface UserProfile {
     photoURL?: string;
     favoriteCocktail?: string;
 }
-
-    

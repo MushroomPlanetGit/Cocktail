@@ -138,7 +138,7 @@ export default function ProfilePage() {
             <Avatar className="h-20 w-20">
               <AvatarImage src={photoURL ?? undefined} data-ai-hint="profile picture" />
               <AvatarFallback>
-                <UserIcon className="h-10 w-10" />
+                {isLoading ? <Loader2 className="h-10 w-10 animate-spin" /> : <UserIcon className="h-10 w-10" />}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -293,5 +293,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
