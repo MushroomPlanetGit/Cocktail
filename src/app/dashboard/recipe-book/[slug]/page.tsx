@@ -57,8 +57,6 @@ export default function RecipeBookPage({ params }: { params: { slug: string } })
       if (recipeSnap.exists()) {
         setRecipe({ id: recipeSnap.id, ...recipeSnap.data() } as Cocktail);
       } else {
-        // If not found by slug, maybe it's an old hardcoded one.
-        // This part can be removed after migration.
         console.error("Recipe not found in Firestore");
       }
       setIsLoadingRecipe(false);

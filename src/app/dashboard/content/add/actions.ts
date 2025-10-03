@@ -57,18 +57,25 @@ export async function addCocktailAction(prevState: any, formData: FormData) {
 
   try {
     const cocktailsCollection = collection(firestore, 'cocktails');
-    await addDoc(cocktailsCollection, {
+    const newCocktailData = {
         ...validatedFields.data,
         userId: currentUser.uid,
-        // The form fields for ingredients and tools are strings, but our UI expects arrays
+        // The form fields for ingredients and tools are strings, but our schema expects arrays
         // We will split them by newline for ingredients and comma for tools
         ingredients: validatedFields.data.ingredients.split('\n').filter(i => i.trim() !== ''),
         tools: validatedFields.data.tools.split(',').map(t => t.trim()).filter(t => t !== ''),
-    });
+    };
+
+    // Use the slug as the document ID for easy lookup
+    // This requires a bit more work than addDoc, using setDoc with a doc ref
+    const { doc, setDoc } = await import('firebase/firestore');
+    const docRef = doc(cocktailsCollection, validatedFields.data.slug);
+    await setDoc(docRef, newCocktailData);
+
   } catch (error) {
      console.error("Error adding cocktail to Firestore:", error);
      return {
-        message: 'There was a problem adding the cocktail to the database.',
+        message: 'There was a problem adding the cocktail. The URL slug may already exist.',
         errors: null,
         success: false,
      }

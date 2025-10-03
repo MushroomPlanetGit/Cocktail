@@ -425,11 +425,11 @@
           "schema": {
             "$ref": "#/backend/entities/Cocktail"
           },
-          "description": "Stores all cocktail recipes, both pre-defined and user-submitted.",
+          "description": "Stores all cocktail recipes, both pre-defined and user-submitted. The cocktailId is the slug.",
           "params": [
             {
               "name": "cocktailId",
-              "description": "The unique ID for the cocktail."
+              "description": "The unique ID for the cocktail, which is its URL-friendly slug."
             }
           ]
         }
