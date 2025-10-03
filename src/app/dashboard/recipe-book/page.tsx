@@ -21,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
@@ -33,6 +32,7 @@ export default function RecipeBookPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -132,6 +132,21 @@ export default function RecipeBookPage() {
   const retakePicture = () => {
     setPhotoDataUrl(null);
   };
+  
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoDataUrl(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -178,6 +193,13 @@ export default function RecipeBookPage() {
   return (
     <div className="grid gap-6">
       <canvas ref={canvasRef} className="hidden" />
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange}
+        className="hidden" 
+        accept="image/*"
+      />
       <Card>
         <CardHeader>
           <CardTitle>Espresso Martini</CardTitle>
@@ -283,7 +305,7 @@ export default function RecipeBookPage() {
                                 Take Picture
                             </Button>
                         )}
-                        <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full" onClick={handleUploadClick}>
                             <Upload className="mr-2 h-4 w-4" />
                             Upload
                         </Button>
