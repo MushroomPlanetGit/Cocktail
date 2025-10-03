@@ -11,7 +11,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
   SidebarTrigger,
   SidebarInset,
   SidebarGroup,
@@ -208,19 +207,6 @@ export default function DashboardLayout({
               </SidebarGroup>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-          <a
-            href={process.env.NEXT_PUBLIC_DEPLOY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full"
-          >
-            <Button className="w-full">
-              <Rocket className="mr-2" />
-              Deploy
-            </Button>
-          </a>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex items-center justify-between h-14 px-4 border-b bg-background/80 backdrop-blur-sm sm:px-6">
