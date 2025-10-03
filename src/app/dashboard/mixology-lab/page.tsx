@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useTransition, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -11,8 +11,9 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { generateQuizQuestionAction } from './actions';
+import { generateQuizQuestionAction, generateWhatAmIPuzzleAction } from './actions';
 import type { GenerateQuizQuestionOutput } from '@/ai/flows/generate-quiz-question';
+import type { GenerateWhatAmIPuzzleOutput } from '@/ai/flows/generate-what-am-i-puzzle';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -40,6 +41,13 @@ export default function MixologyLabPage() {
   const [question, setQuestion] = useState<GenerateQuizQuestionOutput | null>(null);
   const { toast } = useToast();
 
+  // "What Am I?" state
+  const [puzzle, setPuzzle] = useState<GenerateWhatAmIPuzzleOutput | null>(null);
+  const [isPuzzleLoading, setIsPuzzleLoading] = useState(true);
+  const [guess, setGuess] = useState('');
+  const [showPuzzleResult, setShowPuzzleResult] = useState(false);
+  const [isGuessCorrect, setIsGuessCorrect] = useState(false);
+
 
   // Memoize the shuffled answers so they don't re-shuffle on every render
   const shuffledAnswers = useMemo(() => {
@@ -48,6 +56,35 @@ export default function MixologyLabPage() {
     }
     return [];
   }, [question]);
+
+  const fetchPuzzle = () => {
+    setIsPuzzleLoading(true);
+    setGuess('');
+    setShowPuzzleResult(false);
+    generateWhatAmIPuzzleAction().then(result => {
+      if (result.error || !result.puzzle) {
+        toast({
+          title: 'Error Generating Puzzle',
+          description: result.error || 'Could not fetch a new puzzle.',
+          variant: 'destructive',
+        });
+      } else {
+        setPuzzle(result.puzzle);
+      }
+      setIsPuzzleLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    fetchPuzzle();
+  }, []);
+
+  const handleGuessSubmit = () => {
+    if (!puzzle || !guess) return;
+    const isCorrect = guess.trim().toLowerCase() === puzzle.answer.toLowerCase();
+    setIsGuessCorrect(isCorrect);
+    setShowPuzzleResult(true);
+  };
 
 
   const startQuiz = () => {
@@ -285,19 +322,44 @@ export default function MixologyLabPage() {
           <TabsContent value="what-am-i" className="pt-6">
              <div className="max-w-md mx-auto">
                 <h3 className="text-lg font-semibold text-center mb-4">I am a cocktail...</h3>
-                <Card>
-                  <CardContent className="p-6">
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>My main ingredients are rum, mint, and lime.</li>
-                      <li>I am a classic Cuban highball.</li>
-                      <li>I was a favorite of author Ernest Hemingway.</li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                {isPuzzleLoading ? (
+                  <div className="flex items-center justify-center min-h-[200px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : puzzle && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                        {puzzle.clues.map((clue, index) => <li key={index}>{clue}</li>)}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="mt-6 flex gap-2">
-                  <Input placeholder="Type your guess here..." />
-                  <Button>Submit Guess</Button>
+                  <Input 
+                    placeholder="Type your guess here..." 
+                    value={guess}
+                    onChange={(e) => setGuess(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleGuessSubmit()}
+                    disabled={showPuzzleResult}
+                  />
+                  <Button onClick={handleGuessSubmit} disabled={showPuzzleResult || !guess}>Submit Guess</Button>
                 </div>
+
+                {showPuzzleResult && (
+                  <div className={cn(
+                    "mt-4 p-4 rounded-md text-center",
+                    isGuessCorrect ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                  )}>
+                    {isGuessCorrect ? (
+                      <p className="font-semibold flex items-center justify-center"><CheckCircle className="mr-2" /> Correct! It's a {puzzle?.answer}.</p>
+                    ) : (
+                      <p className="font-semibold flex items-center justify-center"><XCircle className="mr-2" /> Not quite. The correct answer was {puzzle?.answer}.</p>
+                    )}
+                    <Button variant="link" onClick={fetchPuzzle} className="mt-2">Play Again</Button>
+                  </div>
+                )}
              </div>
           </TabsContent>
            <TabsContent value="flashcards" className="pt-6">

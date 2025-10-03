@@ -6,15 +6,19 @@ import {
   GenerateQuizQuestionInputSchema,
   GenerateQuizQuestionOutput,
 } from '@/ai/flows/generate-quiz-question';
+import {
+  generateWhatAmIPuzzle,
+  GenerateWhatAmIPuzzleOutput,
+} from '@/ai/flows/generate-what-am-i-puzzle';
 import { z } from 'zod';
 
-const actionSchema = z.object({
+const quizActionSchema = z.object({
   category: z.string(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
 });
 
-export async function generateQuizQuestionAction(input: z.infer<typeof actionSchema>): Promise<{ question: GenerateQuizQuestionOutput | null; error: string | null; }> {
-  const validatedFields = actionSchema.safeParse(input);
+export async function generateQuizQuestionAction(input: z.infer<typeof quizActionSchema>): Promise<{ question: GenerateQuizQuestionOutput | null; error: string | null; }> {
+  const validatedFields = quizActionSchema.safeParse(input);
 
   if (!validatedFields.success) {
     return {
@@ -34,6 +38,22 @@ export async function generateQuizQuestionAction(input: z.infer<typeof actionSch
     return {
       question: null,
       error: 'An unexpected error occurred while generating the quiz question.',
+    };
+  }
+}
+
+export async function generateWhatAmIPuzzleAction(): Promise<{ puzzle: GenerateWhatAmIPuzzleOutput | null; error: string | null; }> {
+  try {
+    const puzzle = await generateWhatAmIPuzzle();
+    return {
+      puzzle,
+      error: null,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      puzzle: null,
+      error: 'An unexpected error occurred while generating the puzzle.',
     };
   }
 }
