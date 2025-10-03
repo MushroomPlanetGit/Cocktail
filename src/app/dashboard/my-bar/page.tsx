@@ -1,14 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2, Search, Camera, Bot, Martini } from 'lucide-react';
+import { PlusCircle, Trash2, Search, Camera, Bot, Martini, Loader2, Sparkles, CheckCircle, ShoppingCart } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
-import { cocktails } from '@/lib/recipes';
+import { suggestCocktailsAction } from './actions';
+import type { CocktailSuggestion } from '@/ai/flows/suggest-cocktails';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface Ingredient {
   id: number;
@@ -17,25 +21,22 @@ interface Ingredient {
   size: string;
 }
 
-interface Suggestion {
-    name: string;
-    match: number;
-    link: string;
-}
-
 const initialIngredients: Ingredient[] = [
   { id: 1, name: 'Vodka', level: 80, size: '750ml' },
   { id: 2, name: 'Gin', level: 50, size: '1L' },
   { id: 3, name: 'Triple Sec', level: 100, size: '750ml' },
   { id: 4, name: 'Lime Juice', level: 25, size: 'N/A' },
   { id: 5, name: 'Coffee Liqueur', level: 90, size: '750ml' },
+  { id: 6, name: 'Espresso', level: 100, size: 'N/A' },
 ];
 
 export default function MyBarPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newIngredientSize, setNewIngredientSize] = useState('750ml');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<CocktailSuggestion[]>([]);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const addIngredient = () => {
     if (newIngredientName.trim() !== '') {
@@ -58,51 +59,23 @@ export default function MyBarPage() {
      setIngredients(ingredients.map(ing => ing.id === id ? { ...ing, level: level[0] } : ing));
   }
 
-  const findWhatICanMake = () => {
-    const ownedIngredients = new Set(ingredients.map(i => i.name.toLowerCase()));
-    const results: Suggestion[] = [];
+  const handleSuggestCocktails = () => {
+    startTransition(async () => {
+      setSuggestions([]); // Clear previous suggestions
+      const ingredientNames = ingredients.map(i => i.name);
+      const result = await suggestCocktailsAction({ ingredients: ingredientNames });
 
-    cocktails.forEach(recipe => {
-        let ownedCount = 0;
-        const recipeIngredients = new Set();
-        
-        recipe.ingredients.forEach(fullIngredientString => {
-            // A more robust way to get the core ingredient name
-            const parts = fullIngredientString.toLowerCase().split(' ');
-            // This is still a simplification, but tries to find the main ingredient name
-            // e.g. "freshly brewed espresso" -> "espresso"
-            // e.g. "coffee liqueur" -> "coffee liqueur"
-            let coreIngredient = parts.slice(1).join(' ').replace(/for garnish/,'').trim();
-            if (coreIngredient.includes('juice')) coreIngredient = 'juice'; // simplify juices
-            if (coreIngredient.includes('liqueur')) coreIngredient = 'liqueur';
-            if (coreIngredient.includes('syrup')) coreIngredient = 'syrup';
-
-
-            // Find if any of our owned ingredients match part of the recipe ingredient name
-            for(const owned of ownedIngredients) {
-                if(fullIngredientString.toLowerCase().includes(owned)) {
-                    if (!recipeIngredients.has(owned)) {
-                         recipeIngredients.add(owned);
-                         ownedCount++;
-                    }
-                    break;
-                }
-            }
+      if (result.error || !result.suggestions) {
+        toast({
+          title: 'Error',
+          description: result.error || 'Could not get suggestions from AI.',
+          variant: 'destructive',
         });
-        
-        const matchPercentage = Math.round((ownedCount / recipe.ingredients.length) * 100);
-
-        if (ownedCount > 0) {
-            results.push({
-                name: recipe.name,
-                match: matchPercentage,
-                link: '/dashboard/content' // This could be updated to a dynamic link
-            });
-        }
+      } else {
+        setSuggestions(result.suggestions);
+      }
     });
-
-    setSuggestions(results.sort((a,b) => b.match - a.match));
-  }
+  };
 
 
   return (
@@ -149,8 +122,7 @@ export default function MyBarPage() {
                         <SelectContent>
                           <SelectItem value="750ml">750ml</SelectItem>
                           <SelectItem value="1L">1L</SelectItem>
-                          <SelectItem value="1.75L">1.75L</SelectItem>
-                           <SelectItem value="N/A">N/A</SelectItem>
+                          <SelectItem value="1.75L">1.75L</                           <SelectItem value="N/A">N/A</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button onClick={addIngredient} className="shrink-0">
@@ -205,33 +177,65 @@ export default function MyBarPage() {
         </CardContent>
       </Card>
       <div className="flex flex-col gap-6">
-        <Button size="lg" onClick={findWhatICanMake} className="self-start">
-          <Search className="mr-2 h-5 w-5" />
-          What can I make with what I have?
+        <Button size="lg" onClick={handleSuggestCocktails} disabled={isPending || ingredients.length === 0} className="self-start">
+            {isPending ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <Search className="mr-2 h-5 w-5" />
+            )}
+          What can I make?
         </Button>
+
+        {isPending && (
+           <Card>
+                <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px] text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <CardTitle className="mt-4">Checking your bar...</CardTitle>
+                    <CardDescription>Our AI mixologist is looking for the perfect cocktail for you.</CardDescription>
+                </CardContent>
+            </Card>
+        )}
 
         {suggestions.length > 0 && (
             <Card>
                 <CardHeader>
-                    <CardTitle>Cocktail Suggestions</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/>AI Cocktail Suggestions</CardTitle>
                     <CardDescription>Based on your inventory, here are a few things you can make.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                     {suggestions.map(suggestion => (
-                        <Link href={suggestion.link} key={suggestion.name}>
-                            <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <Martini className="h-6 w-6 text-muted-foreground" />
-                                    <div>
-                                        <p className="font-semibold">{suggestion.name}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            You have {suggestion.match}% of the ingredients.
-                                        </p>
-                                    </div>
+                      <Card key={suggestion.name} className="p-4">
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-4">
+                                <Martini className="h-6 w-6 text-muted-foreground mt-1" />
+                                <div>
+                                    <p className="font-semibold">{suggestion.name}</p>
+                                    <p className="text-sm text-muted-foreground">{suggestion.rationale}</p>
                                 </div>
-                                <div className="text-sm font-semibold">{suggestion.match}%</div>
                             </div>
-                        </Link>
+                            <Link href="/dashboard/content">
+                              <Button variant="outline" size="sm">View Recipe</Button>
+                            </Link>
+                        </div>
+                        {suggestion.missingIngredients.length > 0 && (
+                          <Alert className="mt-4">
+                            <ShoppingCart className="h-4 w-4" />
+                            <AlertTitle>You're almost there!</AlertTitle>
+                            <AlertDescription>
+                              You're only missing: {suggestion.missingIngredients.join(', ')}.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        {suggestion.matchType === 'perfect' && (
+                           <Alert variant="default" className="mt-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800 dark:text-green-300">Perfect Match!</AlertTitle>
+                            <AlertDescription className="text-green-700 dark:text-green-400">
+                              You have all the ingredients to make this.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </Card>
                     ))}
                 </CardContent>
             </Card>
