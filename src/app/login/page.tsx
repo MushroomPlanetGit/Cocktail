@@ -19,6 +19,8 @@ import {
   FacebookAuthProvider,
   linkWithCredential,
   EmailAuthProvider,
+  OAuthProvider,
+  OAuthCredential,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
@@ -167,27 +169,49 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { pending } = useFormStatus();
 
-  const handleSocialSignIn = async (provider: 'google' | 'facebook') => {
-    const authProvider = provider === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
+  const handleSocialSignIn = async (providerName: 'google' | 'facebook') => {
+    const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
     
     try {
-      if (auth.currentUser && auth.currentUser.isAnonymous) {
-        // If there's an anonymous user, link the new credential
-        await linkWithCredential(auth.currentUser, authProvider);
-        toast({ title: 'Account Linked!', description: 'Your guest account has been upgraded.' });
-      } else {
-        // Otherwise, just sign in
-        await signInWithPopup(auth, authProvider);
+      const result = await signInWithPopup(auth, provider);
+      
+      // After a successful popup sign-in, Firebase automatically handles the session.
+      // If the user was anonymous, Firebase attempts to upgrade the account.
+      // We just need to check if the sign-in was successful and redirect.
+
+      if (auth.currentUser) {
+          toast({ title: 'Sign-in Successful!', description: 'Welcome to your dashboard.' });
+          router.push('/dashboard');
       }
-      router.push('/dashboard');
+
     } catch (error: any) {
-      console.error(error);
-      let message = 'An unknown error occurred during social sign-in.';
-      if (error.code === 'auth/credential-already-in-use') {
-        message = 'This social account is already linked to another user.';
-      } else if (error.code === 'auth/account-exists-with-different-credential') {
-        message = 'An account already exists with the same email address but different sign-in credentials. Try signing in with the original method.';
+      console.error("Social sign-in error:", error);
+
+      // This is the special case where an anonymous user tries to sign in with an email
+      // that is already tied to an existing user account. We need to link them.
+      if (error.code === 'auth/credential-already-in-use' && auth.currentUser?.isAnonymous) {
+        try {
+          const credential = OAuthProvider.credentialFromResult(error.customData) as OAuthCredential;
+          await linkWithCredential(auth.currentUser, credential);
+          toast({ title: 'Account Linked!', description: 'Your guest session has been linked to your existing account.' });
+          router.push('/dashboard');
+        } catch (linkError: any) {
+          console.error("Link error:", linkError);
+          toast({
+            title: 'Linking Failed',
+            description: 'Could not link your guest session to the existing account.',
+            variant: 'destructive',
+          });
+        }
+        return; // Stop further execution
       }
+
+      // Handle other common errors
+      let message = 'An unknown error occurred during social sign-in.';
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        message = 'An account already exists with this email address. Please sign in with the original method.';
+      }
+      
        toast({
         title: 'Sign-in Failed',
         description: message,
