@@ -126,6 +126,7 @@ export async function signupAction(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
+
 export async function signOutAction() {
     redirect('/');
 }

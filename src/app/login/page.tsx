@@ -44,10 +44,10 @@ function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
     )
 }
 
-function SubmitButton({ text, formAction, ...props }: { text: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function SubmitButton({ text, ...props }: { text: string } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'formAction'> & { formAction?: (formData: FormData) => void }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full" formAction={formAction} {...props}>
+    <Button type="submit" disabled={pending} className="w-full" {...props}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {text}
     </Button>
@@ -107,13 +107,17 @@ function SignupForm() {
     }
   }, [state, toast]);
   
-  const handleClientSignUp = async (formData: FormData) => {
+  const handleClientSignUp = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault(); // Prevent default form submission
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData(form);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
     const validated = authSchema.safeParse({ email, password });
     if (!validated.success) {
-        // This should ideally be caught by form validation but is a safeguard
         toast({ title: 'Invalid input', description: 'Please check your email and password.', variant: 'destructive'});
         return;
     }
@@ -127,13 +131,11 @@ function SignupForm() {
             router.push('/dashboard');
         } else {
             // Case 2: Create a new account from scratch using the server action
-            formRef.current?.requestSubmit();
+            formAction(formData);
         }
     } catch (error: any) {
         let message = "An error occurred during sign-up.";
-        if(error.code === 'auth/credential-already-in-use') {
-            message = 'This social account is already linked to another user.';
-        } else if (error.code === 'auth/email-already-in-use') {
+        if(error.code === 'auth/credential-already-in-use' || error.code === 'auth/email-already-in-use') {
             message = 'This email is already in use. Please sign in instead.';
         }
         toast({ title: 'Sign-up failed', description: message, variant: 'destructive'});
@@ -152,7 +154,7 @@ function SignupForm() {
         <Input id="signup-password" type="password" name="password" required />
         {state?.errors?.password && <p className="text-sm text-destructive">{state.errors.password}</p>}
       </div>
-       <SubmitButton text="Sign Up" formAction={handleClientSignUp} />
+       <SubmitButton text="Sign Up" onClick={handleClientSignUp} />
     </form>
   );
 }
@@ -171,6 +173,7 @@ export default function LoginPage() {
       if (auth.currentUser && auth.currentUser.isAnonymous) {
         // If there's an anonymous user, link the new credential
         await linkWithCredential(auth.currentUser, authProvider);
+        toast({ title: 'Account Linked!', description: 'Your guest account has been upgraded.' });
       } else {
         // Otherwise, just sign in
         await signInWithPopup(auth, authProvider);
