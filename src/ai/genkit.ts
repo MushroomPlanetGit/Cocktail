@@ -1,11 +1,11 @@
 import {genkit, Plugin, dotprompt} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import {firebase} from '@genkit-ai/firebase';
+import {firebasePlugin} from '@genkit-ai/firebase/server';
 
 export const ai = genkit({
   plugins: [
     googleAI(),
-    firebase(),
+    firebasePlugin(),
     dotprompt(),
   ] as Plugin<any>[],
   logLevel: 'debug',
