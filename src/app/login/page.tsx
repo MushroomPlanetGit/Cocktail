@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -17,8 +17,10 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   linkWithCredential,
+  EmailAuthProvider,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
 
 const initialState = {
   message: null,
@@ -42,19 +44,23 @@ function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
     )
 }
 
-function SubmitButton({ text }: { text: string }) {
+function SubmitButton({ text, formAction, ...props }: { text: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" disabled={pending} className="w-full" formAction={formAction} {...props}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {text}
     </Button>
   );
 }
 
-function AuthForm({ type }: { type: 'login' | 'signup' }) {
-  const action = type === 'login' ? loginAction : signupAction;
-  const [state, formAction] = useFormState(action, initialState);
+const authSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+});
+
+function LoginForm() {
+  const [state, formAction] = useFormState(loginAction, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,21 +74,89 @@ function AuthForm({ type }: { type: 'login' | 'signup' }) {
   }, [state, toast]);
 
   return (
-    <form action={formAction} className="grid gap-4">
+     <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor={`${type}-email`}>Email</Label>
-        <Input id={`${type}-email`} type="email" name="email" placeholder="m@example.com" required />
+        <Label htmlFor="login-email">Email</Label>
+        <Input id="login-email" type="email" name="email" placeholder="m@example.com" required />
         {state?.errors?.email && <p className="text-sm text-destructive">{state.errors.email}</p>}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${type}-password`}>Password</Label>
-        <Input id={`${type}-password`} type="password" name="password" required />
+        <Label htmlFor="login-password">Password</Label>
+        <Input id="login-password" type="password" name="password" required />
         {state?.errors?.password && <p className="text-sm text-destructive">{state.errors.password}</p>}
       </div>
-      <SubmitButton text={type === 'login' ? 'Sign In' : 'Sign Up'} />
+      <SubmitButton text="Sign In" />
+    </form>
+  )
+}
+
+function SignupForm() {
+  const [state, formAction] = useFormState(signupAction, initialState);
+  const { toast } = useToast();
+  const auth = useAuth();
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.message) {
+      toast({
+        title: state.success ? 'Success!' : 'Authentication Error',
+        description: state.message,
+        variant: state.success ? 'default' : 'destructive',
+      });
+    }
+  }, [state, toast]);
+  
+  const handleClientSignUp = async (formData: FormData) => {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const validated = authSchema.safeParse({ email, password });
+    if (!validated.success) {
+        // This should ideally be caught by form validation but is a safeguard
+        toast({ title: 'Invalid input', description: 'Please check your email and password.', variant: 'destructive'});
+        return;
+    }
+
+    try {
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
+            // Case 1: Upgrade anonymous user
+            const credential = EmailAuthProvider.credential(email, password);
+            await linkWithCredential(auth.currentUser, credential);
+            toast({ title: 'Account Created!', description: 'Your guest account has been upgraded.' });
+            router.push('/dashboard');
+        } else {
+            // Case 2: Create a new account from scratch using the server action
+            formRef.current?.requestSubmit();
+        }
+    } catch (error: any) {
+        let message = "An error occurred during sign-up.";
+        if(error.code === 'auth/credential-already-in-use') {
+            message = 'This social account is already linked to another user.';
+        } else if (error.code === 'auth/email-already-in-use') {
+            message = 'This email is already in use. Please sign in instead.';
+        }
+        toast({ title: 'Sign-up failed', description: message, variant: 'destructive'});
+    }
+  };
+
+  return (
+    <form ref={formRef} action={formAction} className="grid gap-4">
+      <div className="grid gap-2">
+        <Label htmlFor="signup-email">Email</Label>
+        <Input id="signup-email" type="email" name="email" placeholder="m@example.com" required />
+        {state?.errors?.email && <p className="text-sm text-destructive">{state.errors.email}</p>}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="signup-password">Password</Label>
+        <Input id="signup-password" type="password" name="password" required />
+        {state?.errors?.password && <p className="text-sm text-destructive">{state.errors.password}</p>}
+      </div>
+       <SubmitButton text="Sign Up" formAction={handleClientSignUp} />
     </form>
   );
 }
+
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -150,7 +224,7 @@ export default function LoginPage() {
                     <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
                 </div>
               </div>
-              <AuthForm type="login" />
+              <LoginForm />
             </CardContent>
             <CardFooter className='text-sm text-muted-foreground justify-center'>
               <Link href="/dashboard" className='hover:underline'>
@@ -184,7 +258,7 @@ export default function LoginPage() {
                         <span className="bg-background px-2 text-muted-foreground">Or create an account</span>
                     </div>
                 </div>
-              <AuthForm type="signup" />
+              <SignupForm />
             </CardContent>
              <CardFooter className='text-sm text-muted-foreground justify-center'>
                <Link href="/dashboard" className='hover:underline'>

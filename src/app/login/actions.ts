@@ -6,7 +6,6 @@ import {
   AuthErrorCodes
 } from 'firebase/auth';
 import { getAuthenticatedAppForUser } from '@/firebase/get-authenticated-app-for-user';
-import { linkAnonymousUser } from './auth-helpers';
 import { doc, setDoc } from 'firebase/firestore';
 
 const authSchema = z.object({
@@ -88,29 +87,23 @@ export async function signupAction(prevState: any, formData: FormData) {
   const { email, password } = validatedFields.data;
 
   try {
-    const { currentUser: currentAnonymousUser, firestore } = await getAuthenticatedAppForUser();
+    const { firestore } = await getAuthenticatedAppForUser();
     
-    let newUserId: string;
-
-    if (!currentAnonymousUser || !currentAnonymousUser.isAnonymous) {
-        const res = await fetch(
-            `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', },
-                body: JSON.stringify({ email, password, returnSecureToken: true }),
-            }
-        );
-        const authRes = await res.json();
-        if (!res.ok) {
-           throw { code: `auth/${authRes.error.message.toLowerCase().replace(/_/g, '-')}` };
+    // This server action now ONLY handles creating a new user from scratch.
+    // Linking an anonymous user is now handled on the client.
+    const res = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', },
+            body: JSON.stringify({ email, password, returnSecureToken: true }),
         }
-        newUserId = authRes.localId;
-
-    } else {
-       await linkAnonymousUser(email, password);
-       newUserId = currentAnonymousUser.uid;
+    );
+    const authRes = await res.json();
+    if (!res.ok) {
+       throw { code: `auth/${authRes.error.message.toLowerCase().replace(/_/g, '-')}` };
     }
+    const newUserId = authRes.localId;
 
     // Create user profile document
     if (newUserId && firestore) {
