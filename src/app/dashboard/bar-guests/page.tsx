@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { useFormState } from 'react-dom';
+import { useEffect, useMemo, useActionState } from 'react';
 import { searchUsersAction, sendConnectionRequestAction, acceptConnectionRequestAction, removeConnectionAction } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,7 +30,7 @@ const initialSearchState = {
 
 export default function BarGuestsPage() {
   const { toast } = useToast();
-  const [state, formAction] = useFormState(searchUsersAction, initialSearchState);
+  const [state, formAction] = useActionState(searchUsersAction, initialSearchState);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 

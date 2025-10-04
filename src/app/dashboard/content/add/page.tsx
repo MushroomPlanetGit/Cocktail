@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { addCocktailAction } from './actions';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
@@ -47,7 +47,7 @@ const initialState = {
 };
 
 export default function AddCocktailPage() {
-  const [state, formAction] = useFormState(addCocktailAction, initialState);
+  const [state, formAction] = useActionState(addCocktailAction, initialState);
   const { toast } = useToast();
   const { user } = useUser();
 

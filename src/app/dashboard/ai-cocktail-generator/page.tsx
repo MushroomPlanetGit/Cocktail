@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react-dom';
 import { generateCocktailAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,7 @@ function SubmitButton() {
 }
 
 export default function AiCocktailGeneratorPage() {
-  const [state, formAction] = useFormState(generateCocktailAction, initialState);
+  const [state, formAction] = useActionState(generateCocktailAction, initialState);
   const { toast } = useToast();
   const { user } = useUser();
 

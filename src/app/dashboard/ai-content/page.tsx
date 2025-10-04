@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react-dom';
 import { refineContentAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,7 @@ function SubmitButton() {
 }
 
 export default function AiContentPage() {
-  const [state, formAction] = useFormState(refineContentAction, initialState);
+  const [state, formAction] = useActionState(refineContentAction, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
