@@ -22,20 +22,20 @@ function AuthHandler({ auth, firestore }: { auth: Auth, firestore: any }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (newUser) => {
       if (newUser) {
-        if (!newUser.isAnonymous) {
-          // If a non-anonymous user signs in, create their profile document
-          const userRef = doc(firestore, "users", newUser.uid);
-          setDoc(userRef, {
-              id: newUser.uid,
-              email: newUser.email,
-              photoURL: newUser.photoURL,
-              registrationDate: newUser.metadata.creationTime || new Date().toISOString(),
-          }, { merge: true });
+        // Create a user document for both anonymous and non-anonymous users
+        const userRef = doc(firestore, "users", newUser.uid);
+        const userData = {
+            id: newUser.uid,
+            email: newUser.email,
+            photoURL: newUser.photoURL,
+            registrationDate: newUser.metadata.creationTime || new Date().toISOString(),
+            isAnonymous: newUser.isAnonymous,
+        };
+        setDoc(userRef, userData, { merge: true });
 
-          // If they are on the login page, redirect them
-          if (pathname === '/login') {
+        // If a non-anonymous user is on the login page, redirect them
+        if (!newUser.isAnonymous && pathname === '/login') {
             router.push('/dashboard');
-          }
         }
       } else if (!isUserLoading) {
         // If there's no user and we are not in the initial loading state,
