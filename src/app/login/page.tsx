@@ -14,13 +14,8 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
 import {
-  signInWithPopup,
-  GoogleAuthProvider,
-  FacebookAuthProvider,
   linkWithCredential,
   EmailAuthProvider,
-  OAuthProvider,
-  OAuthCredential,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
@@ -31,21 +26,6 @@ const initialState = {
   success: false,
 };
 
-function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 48 48" {...props}>
-            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A8 8 0 0 1 24 36c-5.222 0-9.612-3.87-11.188-8.864l-6.571 4.819A20 20 0 0 0 24 44z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C43.021 36.258 48 30.739 48 24c0-1.341-.138-2.65-.389-3.917z"></path>
-        </svg>
-    )
-}
-
-function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
-            <path fill="currentColor" d="M12 2.04c-5.5 0-10 4.49-10 10.02c0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.84c0-2.5 1.49-3.9 3.8-3.9c1.1 0 2.23.2 2.23.2v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 0 0 8.44-9.9c0-5.53-4.5-10.02-10-10.02z"></path>
-        </svg>
-    )
-}
 
 function SubmitButton({ text, ...props }: { text: string } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'formAction'> & { formAction?: (formData: FormData) => void }) {
   const { pending } = useFormStatus();
@@ -164,61 +144,6 @@ function SignupForm() {
 
 
 export default function LoginPage() {
-  const auth = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
-  const { pending } = useFormStatus();
-
-  const handleSocialSignIn = async (providerName: 'google' | 'facebook') => {
-    const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
-    
-    try {
-      const result = await signInWithPopup(auth, provider);
-      
-      // After a successful popup sign-in, Firebase automatically handles the session.
-      // If the user was anonymous, Firebase attempts to upgrade the account.
-      // We just need to check if the sign-in was successful and redirect.
-
-      if (auth.currentUser) {
-          toast({ title: 'Sign-in Successful!', description: 'Welcome to your dashboard.' });
-          router.push('/dashboard');
-      }
-
-    } catch (error: any) {
-      console.error("Social sign-in error:", error);
-
-      // This is the special case where an anonymous user tries to sign in with an email
-      // that is already tied to an existing user account. We need to link them.
-      if (error.code === 'auth/credential-already-in-use' && auth.currentUser?.isAnonymous) {
-        try {
-          const credential = OAuthProvider.credentialFromResult(error.customData) as OAuthCredential;
-          await linkWithCredential(auth.currentUser, credential);
-          toast({ title: 'Account Linked!', description: 'Your guest session has been linked to your existing account.' });
-          router.push('/dashboard');
-        } catch (linkError: any) {
-          console.error("Link error:", linkError);
-          toast({
-            title: 'Linking Failed',
-            description: 'Could not link your guest session to the existing account.',
-            variant: 'destructive',
-          });
-        }
-        return; // Stop further execution
-      }
-
-      // Handle other common errors
-      let message = 'An unknown error occurred during social sign-in.';
-      if (error.code === 'auth/account-exists-with-different-credential') {
-        message = 'An account already exists with this email address. Please sign in with the original method.';
-      }
-      
-       toast({
-        title: 'Sign-in Failed',
-        description: message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -231,27 +156,9 @@ export default function LoginPage() {
           <Card>
             <CardHeader>
               <CardTitle>Sign In</CardTitle>
-              <CardDescription>Choose your sign-in method or enter your credentials.</CardDescription>
+              <CardDescription>Enter your email and password to sign in.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" onClick={() => handleSocialSignIn('google')} disabled={pending}>
-                    <GoogleIcon className="mr-2 h-4 w-4" />
-                    Google
-                </Button>
-                 <Button variant="outline" onClick={() => handleSocialSignIn('facebook')} disabled={pending}>
-                    <FacebookIcon className="mr-2 h-4 w-4" />
-                    Facebook
-                </Button>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
               <LoginForm />
             </CardContent>
             <CardFooter className='text-sm text-muted-foreground justify-center'>
@@ -265,27 +172,9 @@ export default function LoginPage() {
           <Card>
             <CardHeader>
               <CardTitle>Sign Up</CardTitle>
-              <CardDescription>Choose a method to create your account.</CardDescription>
+              <CardDescription>Enter your details to create an account.</CardDescription>
             </CardHeader>
             <CardContent className='grid gap-4'>
-                <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline" onClick={() => handleSocialSignIn('google')} disabled={pending}>
-                        <GoogleIcon className="mr-2 h-4 w-4" />
-                        Google
-                    </Button>
-                    <Button variant="outline" onClick={() => handleSocialSignIn('facebook')} disabled={pending}>
-                        <FacebookIcon className="mr-2 h-4 w-4" />
-                        Facebook
-                    </Button>
-                </div>
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">Or create an account</span>
-                    </div>
-                </div>
               <SignupForm />
             </CardContent>
              <CardFooter className='text-sm text-muted-foreground justify-center'>

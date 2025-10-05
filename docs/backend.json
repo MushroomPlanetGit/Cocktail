@@ -243,9 +243,7 @@
   "auth": {
     "providers": [
       "anonymous",
-      "password",
-      "google.com",
-      "facebook.com"
+      "password"
     ]
   },
   "firestore": {
